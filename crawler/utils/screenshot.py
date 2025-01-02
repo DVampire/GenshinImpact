@@ -5,26 +5,6 @@ from PIL import Image
 from playwright.async_api import Page
 
 
-async def move_to_header(page: Page):
-    header_selector = 'div.header'
-    await page.evaluate(f"""
-        const header = document.querySelector('{header_selector}');
-        if (header) {{
-            const rect = header.getBoundingClientRect(); // Get the header's position and dimensions
-            const mouseEvent = new MouseEvent('mousemove', {{
-                clientX: rect.left + rect.width / 2, // Horizontal center of the header
-                clientY: rect.top + rect.height / 2,  // Vertical center of the header
-                bubbles: true, // Ensure the event propagates
-                cancelable: true
-            }});
-            document.dispatchEvent(mouseEvent); // Dispatch the mousemove event
-            console.log('Mouse moved to header');
-        }} else {{
-            console.log('Header not found');
-        }}
-    """)
-
-
 async def scroll_and_capture(page: Page, path: str):
     header_selector = 'div.header'
 
@@ -43,7 +23,6 @@ async def scroll_and_capture(page: Page, path: str):
 
     # the first screenshot
     scroll_top = 0
-    await move_to_header(page)
     screenshot_data = await page.screenshot(full_page=False)
     screenshot = Image.open(BytesIO(screenshot_data))
     images.append(screenshot)
@@ -65,7 +44,6 @@ async def scroll_and_capture(page: Page, path: str):
         )
 
         if scroll_top - pre_scroll_top == viewport_height:
-            await move_to_header(page)
             screenshot_data = await page.screenshot(full_page=False)
             screenshot = Image.open(BytesIO(screenshot_data))
             screenshot = screenshot.crop(
@@ -76,8 +54,6 @@ async def scroll_and_capture(page: Page, path: str):
             screenshot_count += 1
         elif scroll_top - pre_scroll_top < viewport_height:
             # last screenshot
-
-            await move_to_header(page)
             screenshot_data = await page.screenshot(full_page=False)
             screenshot = Image.open(BytesIO(screenshot_data))
             screenshot = screenshot.crop(
