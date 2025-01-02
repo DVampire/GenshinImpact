@@ -17,4 +17,8 @@ make install
 
 # configure pre-commit
 pre-commit install --config dev_config/python/.pre-commit-config.yaml
+
+# install playwright
+pip install playwright
+playwright install
 ```
