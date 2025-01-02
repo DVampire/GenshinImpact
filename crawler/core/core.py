@@ -4,8 +4,8 @@ from typing import Dict, Optional, Tuple
 from playwright.async_api import BrowserContext, BrowserType, Page, async_playwright
 
 from crawler.base import AbstractCrawler, IpInfoModel
-from crawler.core.client import Client
 from crawler.logger import logger
+from crawler.parser import IndexParser
 from crawler.proxy import create_ip_pool
 from crawler.utils.file_utils import assemble_project_path
 from crawler.utils.html_files import save_html_file
@@ -14,7 +14,6 @@ from crawler.utils.screenshot import scroll_and_capture
 
 class Crawler(AbstractCrawler):
     context_page: Page
-    xhs_client: Client
     browser_context: BrowserContext
 
     def __init__(
@@ -79,6 +78,8 @@ class Crawler(AbstractCrawler):
                 ]
             )
             self.context_page = await self.browser_context.new_page()
+
+            # Open the index page
             await self.context_page.goto(self.index_url)
 
             # Ensure all network activity is complete
@@ -93,6 +94,8 @@ class Crawler(AbstractCrawler):
 
             # Save the HTML content to a file
             save_html_file(content, 'index.html')
+
+            await self.search()
 
     async def launch_browser(
         self,
@@ -122,10 +125,12 @@ class Crawler(AbstractCrawler):
             return browser_context
         else:
             browser = await chromium.launch(
-                headless=headless, proxy=playwright_proxy, java_script_enabled=True
+                headless=headless,
+                proxy=playwright_proxy,
             )  # type: ignore
             browser_context = await browser.new_context(user_agent=user_agent)
             return browser_context
 
     async def search(self):
-        pass
+        index_parser = IndexParser()
+        await index_parser.parse(self.context_page)
