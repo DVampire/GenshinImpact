@@ -8,8 +8,6 @@ from crawler.logger import logger
 from crawler.parser import IndexParser
 from crawler.proxy import create_ip_pool
 from crawler.utils.file_utils import assemble_project_path
-from crawler.utils.html_files import save_html_file
-from crawler.utils.screenshot import scroll_and_capture
 
 
 class Crawler(AbstractCrawler):
@@ -86,15 +84,6 @@ class Crawler(AbstractCrawler):
             await self.context_page.wait_for_load_state('networkidle')
             await self.context_page.wait_for_selector('div[class="calendar"]')
 
-            # Save a screenshot of the page
-            await scroll_and_capture(self.context_page, 'index.png')
-
-            # Get the page content
-            content = await self.context_page.content()
-
-            # Save the HTML content to a file
-            save_html_file(content, 'index.html')
-
             await self.search()
 
     async def launch_browser(
@@ -132,5 +121,5 @@ class Crawler(AbstractCrawler):
             return browser_context
 
     async def search(self):
-        index_parser = IndexParser()
+        index_parser = IndexParser(config=self.config)
         await index_parser.parse(self.context_page)

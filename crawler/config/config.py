@@ -22,7 +22,7 @@ def build_config(config_path: str, args: Namespace) -> Config:
 
     config.merge_from_dict(cfg_options)
 
-    config.exp_path = assemble_project_path(os.path.join(config.workdir, config.tag))
+    config.exp_path = assemble_project_path(config.exp_path)
     if config.if_remove is None:
         config.if_remove = bool(
             input(f"| Arguments PRESS 'y' to REMOVE: {config.exp_path}? ") == 'y'
@@ -35,5 +35,13 @@ def build_config(config_path: str, args: Namespace) -> Config:
     else:
         logger.info(f'| Arguments Keep work_dir: {config.exp_path}')
     os.makedirs(config.exp_path, exist_ok=True)
+
+    config.html_path = assemble_project_path(config.html_path)
+    os.makedirs(config.html_path, exist_ok=True)
+    logger.info(f'| Arguments HTML path: {config.html_path}')
+
+    config.img_path = assemble_project_path(config.img_path)
+    os.makedirs(config.img_path, exist_ok=True)
+    logger.info(f'| Arguments IMG path: {config.img_path}')
 
     return config
