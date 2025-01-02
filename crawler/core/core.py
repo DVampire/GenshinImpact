@@ -8,6 +8,8 @@ from crawler.core.client import Client
 from crawler.logger import logger
 from crawler.proxy import create_ip_pool
 from crawler.utils.file_utils import assemble_project_path
+from crawler.utils.html_files import save_html_file
+from crawler.utils.screenshot import scroll_and_capture
 
 
 class Crawler(AbstractCrawler):
@@ -79,6 +81,19 @@ class Crawler(AbstractCrawler):
             self.context_page = await self.browser_context.new_page()
             await self.context_page.goto(self.index_url)
 
+            # Ensure all network activity is complete
+            await self.context_page.wait_for_load_state('networkidle')
+            await self.context_page.wait_for_selector('div[class="calendar"]')
+
+            # Save a screenshot of the page
+            await scroll_and_capture(self.context_page, 'index.png')
+
+            # Get the page content
+            content = await self.context_page.content()
+
+            # Save the HTML content to a file
+            save_html_file(content, 'index.html')
+
     async def launch_browser(
         self,
         chromium: BrowserType,
@@ -101,15 +116,15 @@ class Crawler(AbstractCrawler):
                 accept_downloads=True,
                 headless=headless,
                 proxy=playwright_proxy,  # type: ignore
-                viewport={'width': 1920, 'height': 1080},
                 user_agent=user_agent,
+                java_script_enabled=True,
             )
             return browser_context
         else:
-            browser = await chromium.launch(headless=headless, proxy=playwright_proxy)  # type: ignore
-            browser_context = await browser.new_context(
-                viewport={'width': 1920, 'height': 1080}, user_agent=user_agent
-            )
+            browser = await chromium.launch(
+                headless=headless, proxy=playwright_proxy, java_script_enabled=True
+            )  # type: ignore
+            browser_context = await browser.new_context(user_agent=user_agent)
             return browser_context
 
     async def search(self):

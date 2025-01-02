@@ -23,6 +23,7 @@ joblib = "^1.4.2"
 numpy = "1.26.4"
 redis = "^5.2.1"
 types-redis = "^4.6.0.20241004"
+beautifulsoup4 = "^4.12.3"
 
 
 [tool.poetry.group.dev.dependencies]
