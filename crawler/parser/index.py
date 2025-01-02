@@ -32,7 +32,7 @@ class IndexParser(AbstractParser):
         os.makedirs(self.html_path, exist_ok=True)
 
         # Save a screenshot of the page
-        await self._save_screenshot(page)
+        # await self._save_screenshot(page) # TODO: Comment it out for now, as this method causes the page to scroll, which slows down the speed.
 
         # Parse quick navigation
         await self._parse_quick_navigation(page)
