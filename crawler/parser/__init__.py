@@ -1,5 +1,9 @@
-from crawler.parser.index import IndexParser
+from crawler.parser.strategy import StrategyParser
+from crawler.parser.summon import SummonParser
+from crawler.parser.wiki import WikiParser
 
 __all__ = [
-    'IndexParser',
+    'WikiParser',
+    'StrategyParser',
+    'SummonParser',
 ]

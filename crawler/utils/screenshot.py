@@ -5,7 +5,7 @@ from PIL import Image
 from playwright.async_api import Page
 
 
-async def scroll_and_capture(page: Page, path: str):
+async def scroll_and_capture(page: Page, path: str, sleep_time: int = 1):
     header_selector = 'div.header'
 
     header_height = await page.evaluate(f"""
@@ -13,7 +13,7 @@ async def scroll_and_capture(page: Page, path: str):
                 header ? header.offsetHeight : 0;
             """)
 
-    scrollable_selector = 'div.root__scroll-body.sr-banner-style'
+    scrollable_selector = 'div.root__scroll-body'
     viewport_height = await page.evaluate(
         f"document.querySelector('{scrollable_selector}').clientHeight"
     )
@@ -37,7 +37,7 @@ async def scroll_and_capture(page: Page, path: str):
                             scrollableDiv.scrollTop += {viewport_height};
                         }}
                     """)
-        time.sleep(1)
+        time.sleep(sleep_time)
 
         scroll_top = await page.evaluate(
             f"document.querySelector('{scrollable_selector}').scrollTop"
@@ -66,6 +66,11 @@ async def scroll_and_capture(page: Page, path: str):
             )
             images.append(screenshot)
             break
+
+    # scroll to the top
+    await page.evaluate(
+        f"document.querySelector('{scrollable_selector}').scrollTop = 0"
+    )
 
     combine_screenshots_in_memory(images, path)
 

@@ -5,7 +5,7 @@ from playwright.async_api import BrowserContext, BrowserType, Page, async_playwr
 
 from crawler.base import AbstractCrawler, IpInfoModel
 from crawler.logger import logger
-from crawler.parser import IndexParser
+from crawler.parser.summon import SummonParser
 from crawler.proxy import create_ip_pool
 from crawler.utils.file_utils import assemble_project_path
 
@@ -21,7 +21,6 @@ class Crawler(AbstractCrawler):
         **kwargs,
     ) -> None:
         self.config = config
-        self.index_url = 'https://bbs.mihoyo.com/ys/obc/?bbs_presentation_style=no_header&visit_device=pc'
         self.user_agent = (
             config.user_agent
             if config.user_agent
@@ -77,13 +76,6 @@ class Crawler(AbstractCrawler):
             )
             self.context_page = await self.browser_context.new_page()
 
-            # Open the index page
-            await self.context_page.goto(self.index_url)
-
-            # Ensure all network activity is complete
-            await self.context_page.wait_for_load_state('networkidle')
-            await self.context_page.wait_for_selector('div[class="calendar"]')
-
             await self.search()
 
     async def launch_browser(
@@ -94,7 +86,7 @@ class Crawler(AbstractCrawler):
         headless: bool = True,
     ) -> BrowserContext:
         """Launch browser and create browser context"""
-        logger.info('Begin create browser context ...')
+        logger.info('| Begin create browser context ...')
         if self.config.save_login_state:
             # feat issue #14
 
@@ -121,5 +113,24 @@ class Crawler(AbstractCrawler):
             return browser_context
 
     async def search(self):
-        index_parser = IndexParser(config=self.config)
-        await index_parser.parse(self.context_page)
+        # # wiki (观测 Wiki)
+        # url = 'https://bbs.mihoyo.com/ys/obc/?bbs_presentation_style=no_header&visit_device=pc'
+        # page_name = 'wiki'
+        # wiki_parser = WikiParser(config=self.config, url=url, page_name=page_name)
+        # wiki_res_info = await wiki_parser.parse(self.context_page)
+
+        # strategy (观测 攻略)
+        # url = 'https://bbs.mihoyo.com/ys/strategy/?bbs_presentation_style=no_header'
+        # page_name = 'strategy'
+        # strategy_parser = StrategyParser(config=self.config, url=url, page_name=page_name)
+        # strategy_res_info = await strategy_parser.parse(self.context_page)
+
+        # summon (观测 七圣召唤)
+        url = (
+            'https://bbs.mihoyo.com/ys/strategy/summon?bbs_presentation_style=no_header'
+        )
+        page_name = 'summon'
+        summon_parser = SummonParser(config=self.config, url=url, page_name=page_name)
+        summon_res_info = await summon_parser.parse(self.context_page)
+
+        logger.info(summon_res_info)
