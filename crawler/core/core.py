@@ -5,7 +5,9 @@ from playwright.async_api import BrowserContext, BrowserType, Page, async_playwr
 
 from crawler.base import AbstractCrawler, IpInfoModel
 from crawler.logger import logger
+from crawler.parser.strategy import StrategyParser
 from crawler.parser.summon import SummonParser
+from crawler.parser.wiki import WikiParser
 from crawler.proxy import create_ip_pool
 from crawler.utils.file_utils import assemble_project_path
 
@@ -113,17 +115,21 @@ class Crawler(AbstractCrawler):
             return browser_context
 
     async def search(self):
-        # # wiki (观测 Wiki)
-        # url = 'https://bbs.mihoyo.com/ys/obc/?bbs_presentation_style=no_header&visit_device=pc'
-        # page_name = 'wiki'
-        # wiki_parser = WikiParser(config=self.config, url=url, page_name=page_name)
-        # wiki_res_info = await wiki_parser.parse(self.context_page)
+        # wiki (观测 Wiki)
+        url = 'https://bbs.mihoyo.com/ys/obc/?bbs_presentation_style=no_header&visit_device=pc'
+        page_name = 'wiki'
+        wiki_parser = WikiParser(config=self.config, url=url, page_name=page_name)
+        wiki_res_info = await wiki_parser.parse(self.context_page)
+        logger.info(f'Wiki modules: {wiki_res_info.keys()}')
 
         # strategy (观测 攻略)
-        # url = 'https://bbs.mihoyo.com/ys/strategy/?bbs_presentation_style=no_header'
-        # page_name = 'strategy'
-        # strategy_parser = StrategyParser(config=self.config, url=url, page_name=page_name)
-        # strategy_res_info = await strategy_parser.parse(self.context_page)
+        url = 'https://bbs.mihoyo.com/ys/strategy/?bbs_presentation_style=no_header'
+        page_name = 'strategy'
+        strategy_parser = StrategyParser(
+            config=self.config, url=url, page_name=page_name
+        )
+        strategy_res_info = await strategy_parser.parse(self.context_page)
+        logger.info(f'Strategy modules: {strategy_res_info.keys()}')
 
         # summon (观测 七圣召唤)
         url = (
@@ -132,5 +138,4 @@ class Crawler(AbstractCrawler):
         page_name = 'summon'
         summon_parser = SummonParser(config=self.config, url=url, page_name=page_name)
         summon_res_info = await summon_parser.parse(self.context_page)
-
-        logger.info(summon_res_info)
+        logger.info(f'Summon modules: {summon_res_info.keys()}')
