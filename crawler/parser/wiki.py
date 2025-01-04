@@ -1,14 +1,13 @@
 import os
 from typing import Any, Dict, List, Optional
 
-from playwright.async_api import Page
+from playwright.async_api import BrowserContext, Page
 from scrapy.selector import Selector
 
 from crawler.base import AbstractParser
 from crawler.logger import logger
 from crawler.utils.element import save_element
-from crawler.utils.html_files import save_html_file
-from crawler.utils.screenshot import scroll_and_capture
+from crawler.utils.url import add_url
 
 __all__ = [
     'WikiParser',
@@ -21,19 +20,24 @@ class WikiParser(AbstractParser):
         self.url = url
         self.page_name = page_name
 
-    async def parse(self, page: Optional[Page] = None) -> Dict[str, Any]:
+    async def parse(
+        self,
+        browser_context: Optional[BrowserContext] = None,
+    ) -> Dict[str, Any]:
         """
         parse page
         :param page:
         :return:
         """
+        # New a context page
+        context_page = await browser_context.new_page()
+
         logger.info(f'| Go to the page {self.url}')
         # Open the page
-        await page.goto(self.url)
+        await context_page.goto(self.url)
 
         # Ensure all network activity is complete
-        await page.wait_for_load_state('networkidle')
-        await page.wait_for_selector('div[class="calendar"]')
+        await context_page.wait_for_load_state('networkidle')
 
         logger.info('| Start parsing page...')
 
@@ -44,29 +48,24 @@ class WikiParser(AbstractParser):
 
         # Save a screenshot of the page
         await self._save_screenshot(
-            page
+            context_page, browser_context
         )  # TODO: Comment it out for now, as this method causes the page to scroll, which slows down the speed.
 
         # Parse the page
-        res_info = await self._parse(page)
+        res_info = await self._parse(context_page, browser_context)
 
         logger.info('| Finish parsing page...')
 
+        # Close the context page
+        await context_page.close()
+
         return res_info
 
-    async def _save_screenshot(self, page: Optional[Page] = None) -> None:
-        save_name = f'{0:04d}_full'
-
-        # Save a screenshot of the page
-        await scroll_and_capture(page, os.path.join(self.img_path, f'{save_name}.png'))
-
-        # Get the page content
-        content = await page.content()  # type: ignore
-
-        # Save the HTML content to a file
-        save_html_file(content, os.path.join(self.html_path, f'{save_name}.html'))
-
-    async def _parse(self, page: Optional[Page] = None) -> Dict[str, Any]:
+    async def _parse(
+        self,
+        context_page: Optional[Page] = None,
+        browser_context: Optional[BrowserContext] = None,
+    ) -> Dict[str, Any]:
         """
         :param page:
         :return: res_info: Dict[str, Any]
@@ -76,9 +75,9 @@ class WikiParser(AbstractParser):
 
         class_name = 'ul.home__map'
         # Wait for the element to load
-        await page.wait_for_selector(class_name)  # type: ignore
+        await context_page.wait_for_selector(class_name)  # type: ignore
         # Locate the matching elements
-        elements = page.locator(class_name)
+        elements = context_page.locator(class_name)
 
         ###################################Get the quick navigation##########################################
         res_quick_navigation_info: Dict[str, Any] = dict()
@@ -114,7 +113,7 @@ class WikiParser(AbstractParser):
             item: Dict[str, Any] = dict()
 
             # Get the text of the sub element
-            item['href'] = sub_element.css('a::attr(href)').get()
+            item['href'] = add_url(sub_element.css('a::attr(href)').get())
             item['images'] = sub_element.css('img::attr(data-src)').getall()
 
             res_quick_navigation_info['element_data'].append(item)
@@ -293,7 +292,7 @@ class WikiParser(AbstractParser):
             item: Dict[str, Any] = dict()
 
             # Get the text of the sub element
-            item['href'] = sub_element.css('a::attr(href)').get()
+            item['href'] = add_url(sub_element.css('a::attr(href)').get())
             item['title'] = sub_element.css('a::attr(title)').get()
             item['images'] = sub_element.css('img::attr(data-src)').getall()
             res_indexing_info['element_data'].append(item)
