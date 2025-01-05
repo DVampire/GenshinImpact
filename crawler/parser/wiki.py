@@ -79,11 +79,11 @@ class WikiParser(AbstractParser):
         # Locate the matching elements
         elements = context_page.locator(class_name)
 
-        ###################################Get the quick navigation##########################################
+        ###################################Get the 快捷导航##########################################
         res_quick_navigation_info: Dict[str, Any] = dict()
 
-        logger.info('| Start parsing page - quick navigation - element...')
-        save_name = f'{1:04d}_quick_navigation'
+        logger.info('| Start parsing page - 快捷导航 - element...')
+        save_name = f'{1:04d}_快捷导航'
 
         element = elements.nth(0)
 
@@ -98,12 +98,12 @@ class WikiParser(AbstractParser):
         # Save the results to the dictionary
         res_quick_navigation_info['element_img_path'] = img_path
         res_quick_navigation_info['element_html_path'] = html_path
-        logger.info('| Finish parsing page - quick navigation - element...')
+        logger.info('| Finish parsing page - 快捷导航 - element...')
 
         # Convert the element to scrapy selector
         element = Selector(text=content)
 
-        logger.info('| Start parsing page - quick navigation - sub elements...')
+        logger.info('| Start parsing page - 快捷导航 - sub elements...')
         # Start get sub elements
         res_quick_navigation_info['element_data']: List[Dict[str, Any]] = []  # type: ignore
         sub_class_name = 'div.kingkong-16-item'
@@ -118,16 +118,16 @@ class WikiParser(AbstractParser):
 
             res_quick_navigation_info['element_data'].append(item)
 
-        logger.info('| Finish parsing page - quick navigation - sub elements...')
+        logger.info('| Finish parsing page - 快捷导航 - sub elements...')
 
-        res_info['quick_navigation'] = res_quick_navigation_info
-        ###################################Get the quick navigation##########################################
+        res_info['快捷导航'] = res_quick_navigation_info
+        ###################################Get the 快捷导航##########################################
 
-        ###################################Get the calendar##################################################
+        ###################################Get the 日历##################################################
         res_calendar_info: Dict[str, Any] = dict()
 
-        logger.info('| Start parsing page - calendar - element...')
-        save_name = f'{2:04d}_calendar'
+        logger.info('| Start parsing page - 日历 - element...')
+        save_name = f'{2:04d}_日历'
 
         element = elements.nth(1)  # the second element
 
@@ -142,18 +142,18 @@ class WikiParser(AbstractParser):
         res_calendar_info['element_img_path'] = img_path
         res_calendar_info['element_html_path'] = html_path
         res_calendar_info['element_data']: List[Dict[str, Any]] = []  # type: ignore
-        logger.info('| Finish parsing page - calendar - element...')
+        logger.info('| Finish parsing page - 日历 - element...')
 
-        # TODO: DO NOT parse the sub elements of calendar for now, as it is not necessary.
+        # TODO: DO NOT parse the sub elements of 日历 for now, as it is not necessary.
 
-        res_info['calendar'] = res_calendar_info
-        ###################################Get the calendar##################################################
+        res_info['日历'] = res_calendar_info
+        ###################################Get the 日历##################################################
 
-        ###################################Get the illustration##############################################
+        ###################################Get the 图鉴##############################################
         res_illustration_info: Dict[str, Any] = dict()
 
-        logger.info('| Start parsing page - illustration - element...')
-        save_name = f'{3:04d}_illustration'
+        logger.info('| Start parsing page - 图鉴 - element...')
+        save_name = f'{3:04d}_图鉴'
 
         element = elements.nth(2)  # the third element
 
@@ -169,18 +169,18 @@ class WikiParser(AbstractParser):
         res_illustration_info['element_html_path'] = html_path
         res_illustration_info['element_data']: List[Dict[str, Any]] = []  # type: ignore
 
-        logger.info('| Finish parsing page - illustration - element...')
+        logger.info('| Finish parsing page - 图鉴 - element...')
 
-        # TODO: DO NOT parse the sub elements of illustration for now, as it is not necessary.
+        # TODO: DO NOT parse the sub elements of 图鉴 for now, as it is not necessary.
 
-        res_info['illustration'] = res_illustration_info
-        ###################################Get the illustration##############################################
+        res_info['图鉴'] = res_illustration_info
+        ###################################Get the 图鉴##############################################
 
-        ###################################Get the cards#####################################################
+        ###################################Get the 卡牌图鉴#####################################################
         res_cards_info: Dict[str, Any] = dict()
 
-        logger.info('| Start parsing page - cards - element...')
-        save_name = f'{4:04d}_cards'
+        logger.info('| Start parsing page - 卡牌图鉴 - element...')
+        save_name = f'{4:04d}_卡牌图鉴'
 
         element = elements.nth(3)  # the fourth element
         element = element.locator('li.home__position').nth(0)
@@ -197,17 +197,17 @@ class WikiParser(AbstractParser):
         res_cards_info['element_html_path'] = html_path
         res_cards_info['element_data']: List[Dict[str, Any]] = []
 
-        logger.info('| Finish parsing page - cards - element...')
-        # TODO: DO NOT parse the sub elements of cards for now, as it is not necessary.
+        logger.info('| Finish parsing page - 卡牌图鉴 - element...')
+        # TODO: DO NOT parse the sub elements of 卡牌图鉴 for now, as it is not necessary.
 
-        res_info['cards'] = res_cards_info
-        ###################################Get the cards#####################################################
+        res_info['卡牌图鉴'] = res_cards_info
+        ###################################Get the 卡牌图鉴#####################################################
 
-        ###################################Get the video gallery#############################################
+        ###################################Get the 影音回廊#############################################
         res_video_gallery_info: Dict[str, Any] = dict()
 
-        logger.info('| Start parsing page - video gallery - element...')
-        save_name = f'{5:04d}_video_gallery'
+        logger.info('| Start parsing page - 影音回廊 - element...')
+        save_name = f'{5:04d}_影音回廊'
 
         element = elements.nth(3)  # the fourth element
         element = element.locator('li.home__position').nth(1)
@@ -224,17 +224,17 @@ class WikiParser(AbstractParser):
         res_video_gallery_info['element_html_path'] = html_path
         res_video_gallery_info['element_data']: List[Dict[str, Any]] = []
 
-        logger.info('| Finish parsing page - video gallery - element...')
-        # TODO: DO NOT parse the sub elements of video gallery for now, as it is not necessary.
+        logger.info('| Finish parsing page -影音回廊 - element...')
+        # TODO: DO NOT parse the sub elements of 影音回廊 for now, as it is not necessary.
 
-        res_info['video_gallery'] = res_video_gallery_info
-        ################################ Get the video gallery#############################################
+        res_info['影音回廊'] = res_video_gallery_info
+        ################################ Get the 影音回廊#############################################
 
-        ###################################Get the observation#############################################
+        ###################################Get the 观测#############################################
         res_observation_info: Dict[str, Any] = dict()
 
-        logger.info('| Start parsing page - observation - element...')
-        save_name = f'{6:04d}_observation'
+        logger.info('| Start parsing page - 观测 - element...')
+        save_name = f'{6:04d}_观测'
 
         element = elements.nth(3)  # the fourth element
         element = element.locator('li.home__position').nth(2)
@@ -251,17 +251,17 @@ class WikiParser(AbstractParser):
         res_observation_info['element_html_path'] = html_path
         res_observation_info['element_data']: List[Dict[str, Any]] = []
 
-        logger.info('| Finish parsing page - observation - element...')
-        # TODO: DO NOT parse the sub elements of observation for now, as it is not necessary.
+        logger.info('| Finish parsing page - 观测 - element...')
+        # TODO: DO NOT parse the sub elements of 观测 for now, as it is not necessary.
 
-        res_info['observation'] = res_observation_info
+        res_info['观测'] = res_observation_info
         ###################################Get the observation#############################################
 
-        ###################################Get the indexing################################################
+        ###################################Get the 各类索引################################################
         res_indexing_info: Dict[str, Any] = dict()
 
-        logger.info('| Start parsing page - indexing - element...')
-        save_name = f'{7:04d}_indexing'
+        logger.info('| Start parsing page - 各类索引 - element...')
+        save_name = f'{7:04d}_各类索引'
 
         element = elements.nth(3)  # the fourth element
         element = element.locator('li.home__position').nth(3)
@@ -278,12 +278,12 @@ class WikiParser(AbstractParser):
         res_indexing_info['element_html_path'] = html_path
         res_indexing_info['element_data']: List[Dict[str, Any]] = []
 
-        logger.info('| Finish parsing page - indexing - element...')
+        logger.info('| Finish parsing page - 各类索引 - element...')
 
         # Convert the element to scrapy selector
         element = Selector(text=content)
 
-        logger.info('| Start parsing page - indexing - sub elements...')
+        logger.info('| Start parsing page - 各类索引 - sub elements...')
         # Start get sub elements
         sub_class_name = 'li.position-list__item'
         sub_elements = element.css(sub_class_name)
@@ -297,10 +297,10 @@ class WikiParser(AbstractParser):
             item['images'] = sub_element.css('img::attr(data-src)').getall()
             res_indexing_info['element_data'].append(item)
 
-        logger.info('| Finish parsing page - indexing - sub elements...')
+        logger.info('| Finish parsing page - 各类索引 - sub elements...')
 
-        res_info['indexing'] = res_indexing_info
+        res_info['各类索引'] = res_indexing_info
 
-        ###################################Get the indexing################################################
+        ###################################Get the 各类索引################################################
 
         return res_info

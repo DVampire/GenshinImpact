@@ -78,11 +78,11 @@ class StrategyParser(AbstractParser):
         # Locate the matching elements
         elements = context_page.locator(class_name)  # type: ignore
 
-        ###################################Get the quick navigation##########################################
+        ###################################Get the 快捷导航##########################################
         res_quick_navigation_info: Dict[str, Any] = dict()
 
-        logger.info('| Start parsing page - quick navigation - element...')
-        save_name = f'{1:04d}_quick_navigation'
+        logger.info('| Start parsing page - 快捷导航 - element...')
+        save_name = f'{1:04d}_快捷导航'
 
         element = elements.nth(0)
 
@@ -97,12 +97,12 @@ class StrategyParser(AbstractParser):
         # Save the results to the dictionary
         res_quick_navigation_info['element_img_path'] = img_path
         res_quick_navigation_info['element_html_path'] = html_path
-        logger.info('| Finish parsing page - quick navigation - element...')
+        logger.info('| Finish parsing page - 快捷导航 - element...')
 
         # Convert the element to scrapy selector
         element = Selector(text=content)
 
-        logger.info('| Start parsing page - quick navigation - sub elements...')
+        logger.info('| Start parsing page - 快捷导航 - sub elements...')
         # Start get sub elements
         res_quick_navigation_info['element_data']: List[Dict[str, Any]] = []  # type: ignore
         sub_class_name = 'div.kingkong-16-item'
@@ -117,16 +117,16 @@ class StrategyParser(AbstractParser):
 
             res_quick_navigation_info['element_data'].append(item)
 
-        logger.info('| Finish parsing page - quick navigation - sub elements...')
+        logger.info('| Finish parsing page - 快捷导航 - sub elements...')
 
-        res_info['quick_navigation'] = res_quick_navigation_info
-        ###################################Get the quick navigation##########################################
+        res_info['快捷导航'] = res_quick_navigation_info
+        ###################################Get the 快捷导航##########################################
 
-        ###################################Get the explore##################################################
+        ###################################Get the 玩法探索##################################################
         res_explore_info: Dict[str, Any] = dict()
 
-        logger.info('| Start parsing page - explore - element...')
-        save_name = f'{2:04d}_explore'
+        logger.info('| Start parsing page - 玩法探索 - element...')
+        save_name = f'{2:04d}_玩法探索'
 
         element = elements.nth(1)
         element = element.locator('li.home__position').nth(0)
@@ -142,18 +142,18 @@ class StrategyParser(AbstractParser):
         res_explore_info['element_img_path'] = img_path
         res_explore_info['element_html_path'] = html_path
         res_explore_info['element_data']: List[Dict[str, Any]] = []  # type: ignore
-        logger.info('| Finish parsing page - explore - element...')
+        logger.info('| Finish parsing page - 玩法探索 - element...')
 
-        # TODO: DO NOT parse the sub elements of explore for now, as it is not necessary.
+        # TODO: DO NOT parse the sub elements of 玩法探索 for now, as it is not necessary.
 
-        res_info['explore'] = res_explore_info
-        ###################################Get the explore##################################################
+        res_info['玩法探索'] = res_explore_info
+        ###################################Get the 玩法探索##################################################
 
-        ###################################Get the cards#####################################################
+        ###################################Get the 卡组攻略#####################################################
         res_cards_info: Dict[str, Any] = dict()
 
-        logger.info('| Start parsing page - cards - element...')
-        save_name = f'{4:04d}_cards'
+        logger.info('| Start parsing page - 卡组攻略 - element...')
+        save_name = f'{4:04d}_卡组攻略'
 
         element = elements.nth(1)
         element = element.locator('li.home__position').nth(1)
@@ -170,17 +170,17 @@ class StrategyParser(AbstractParser):
         res_cards_info['element_html_path'] = html_path
         res_cards_info['element_data']: List[Dict[str, Any]] = []
 
-        logger.info('| Finish parsing page - cards - element...')
-        # TODO: DO NOT parse the sub elements of cards for now, as it is not necessary.
+        logger.info('| Finish parsing page - 卡组攻略 - element...')
+        # TODO: DO NOT parse the sub elements of 卡组攻略 for now, as it is not necessary.
 
-        res_info['cards'] = res_cards_info
-        ###################################Get the cards#####################################################
+        res_info['卡组攻略'] = res_cards_info
+        ###################################Get the 卡组攻略#####################################################
 
-        ###################################Get the video gallery#############################################
+        ###################################Get the 视频攻略#############################################
         res_video_gallery_info: Dict[str, Any] = dict()
 
-        logger.info('| Start parsing page - video gallery - element...')
-        save_name = f'{5:04d}_video_gallery'
+        logger.info('| Start parsing page - 视频攻略 - element...')
+        save_name = f'{5:04d}_视频攻略'
 
         element = elements.nth(1)
         element = element.locator('li.home__position').nth(2)
@@ -197,17 +197,17 @@ class StrategyParser(AbstractParser):
         res_video_gallery_info['element_html_path'] = html_path
         res_video_gallery_info['element_data']: List[Dict[str, Any]] = []
 
-        logger.info('| Finish parsing page - video gallery - element...')
-        # TODO: DO NOT parse the sub elements of video gallery for now, as it is not necessary.
+        logger.info('| Finish parsing page - 视频攻略 - element...')
+        # TODO: DO NOT parse the sub elements of 视频攻略 for now, as it is not necessary.
 
-        res_info['video_gallery'] = res_video_gallery_info
-        ################################ Get the video gallery#############################################
+        res_info['视频攻略'] = res_video_gallery_info
+        ################################ Get the 视频攻略#############################################
 
-        ###################################Get the npc#############################################
+        ###################################Get the npc挑战#############################################
         res_npc_info: Dict[str, Any] = dict()
 
-        logger.info('| Start parsing page - npc - element...')
-        save_name = f'{6:04d}_npc'
+        logger.info('| Start parsing page - npc挑战 - element...')
+        save_name = f'{6:04d}_npc挑战'
 
         element = elements.nth(1)
         element = element.locator('li.home__position').nth(3)
@@ -224,17 +224,17 @@ class StrategyParser(AbstractParser):
         res_npc_info['element_html_path'] = html_path
         res_npc_info['element_data']: List[Dict[str, Any]] = []
 
-        logger.info('| Finish parsing page - npc - element...')
-        # TODO: DO NOT parse the sub elements of npc for now, as it is not necessary.
+        logger.info('| Finish parsing page - npc挑战 - element...')
+        # TODO: DO NOT parse the sub elements of npc挑战 for now, as it is not necessary.
 
-        res_info['npc'] = res_npc_info
-        ###################################Get the npc#############################################
+        res_info['npc挑战'] = res_npc_info
+        ###################################Get the npc挑战#############################################
 
-        ###################################Get the fan creation#############################################
+        ###################################Get the fan 同人内容#############################################
         res_fan_creation_info: Dict[str, Any] = dict()
 
-        logger.info('| Start parsing page - fan_creation - element...')
-        save_name = f'{7:04d}_fan_creation'
+        logger.info('| Start parsing page - 同人内容 - element...')
+        save_name = f'{7:04d}_同人内容'
 
         element = elements.nth(1)
         element = element.locator('li.home__position').nth(4)
@@ -251,17 +251,17 @@ class StrategyParser(AbstractParser):
         res_fan_creation_info['element_html_path'] = html_path
         res_fan_creation_info['element_data']: List[Dict[str, Any]] = []
 
-        logger.info('| Finish parsing page - fan_creation - element...')
-        # TODO: DO NOT parse the sub elements of fan_creation for now, as it is not necessary.
+        logger.info('| Finish parsing page - 同人内容 - element...')
+        # TODO: DO NOT parse the sub elements of 同人内容 for now, as it is not necessary.
 
-        res_info['fan_creation'] = res_fan_creation_info
-        ###################################Get the fan_creation#############################################
+        res_info['同人内容'] = res_fan_creation_info
+        ###################################Get the 同人内容#############################################
 
-        ###################################Get the indexing################################################
+        ###################################Get the 索引分类################################################
         res_indexing_info: Dict[str, Any] = dict()
 
-        logger.info('| Start parsing page - indexing - element...')
-        save_name = f'{8:04d}_indexing'
+        logger.info('| Start parsing page - 索引分类 - element...')
+        save_name = f'{8:04d}_索引分类'
 
         element = elements.nth(1)
         element = element.locator('li.home__position').nth(5)
@@ -278,12 +278,12 @@ class StrategyParser(AbstractParser):
         res_indexing_info['element_html_path'] = html_path
         res_indexing_info['element_data']: List[Dict[str, Any]] = []
 
-        logger.info('| Finish parsing page - indexing - element...')
+        logger.info('| Finish parsing page - 索引分类 - element...')
 
         # Convert the element to scrapy selector
         element = Selector(text=content)
 
-        logger.info('| Start parsing page - indexing - sub elements...')
+        logger.info('| Start parsing page - 索引分类 - sub elements...')
         # Start get sub elements
         sub_class_name = 'li.position-list__item'
         sub_elements = element.css(sub_class_name)
@@ -297,10 +297,10 @@ class StrategyParser(AbstractParser):
             item['images'] = sub_element.css('img::attr(data-src)').getall()
             res_indexing_info['element_data'].append(item)
 
-        logger.info('| Finish parsing page - indexing - sub elements...')
+        logger.info('| Finish parsing page - 索引分类 - sub elements...')
 
-        res_info['indexing'] = res_indexing_info
+        res_info['索引分类'] = res_indexing_info
 
-        ###################################Get the indexing################################################
+        ###################################Get the 索引分类################################################
 
         return res_info

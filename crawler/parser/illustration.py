@@ -9,7 +9,6 @@ from crawler.base import AbstractParser
 from crawler.logger import logger
 from crawler.parser.character import CharacterParser
 from crawler.utils.html_files import save_html_file
-from crawler.utils.screenshot import scroll_and_capture
 from crawler.utils.url import add_url
 
 __all__ = [
@@ -78,9 +77,7 @@ class IllustrationParser(AbstractParser):
         res_info: Dict[str, Any] = dict()
 
         # parse character
-        res_info['character'] = await self._parse_character(
-            context_page, browser_context
-        )
+        res_info['角色'] = await self._parse_character(context_page, browser_context)
 
         return res_info
 
@@ -115,9 +112,9 @@ class IllustrationParser(AbstractParser):
 
         # Save a screenshot of the page
         save_name = f'{0:04d}_full'
-        await scroll_and_capture(
-            context_page, os.path.join(img_path, f'{save_name}.png')
-        )
+        # await scroll_and_capture(
+        #     context_page, os.path.join(img_path, f'{save_name}.png')
+        # ) # TODO: Comment it out for now, as this method causes the page to scroll, which slows down the speed.
 
         # Get the page content
         content = await context_page.content()
@@ -172,7 +169,4 @@ class IllustrationParser(AbstractParser):
         """
         Run a batch of tasks and handle any potential errors.
         """
-        try:
-            await asyncio.gather(*tasks)
-        except Exception as e:
-            logger.error(f'Error in batch: {e}')
+        await asyncio.gather(*tasks)
