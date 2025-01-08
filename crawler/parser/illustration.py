@@ -155,7 +155,7 @@ class IllustrationParser(AbstractParser):
             tasks.append(character_parser.parse(browser_context))
 
             # If batch size is reached, execute the tasks
-            if len(tasks) == 1:
+            if len(tasks) == self.config.batch_size:
                 await self._run_batch(tasks)
                 tasks = []  # Reset tasks for the next batch
 

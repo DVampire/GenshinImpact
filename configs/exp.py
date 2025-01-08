@@ -15,3 +15,6 @@ user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
 save_login_state = True
 save_data_option = 'json'
 user_data_dir = f'{platform}_user_data'
+
+# parser
+batch_size = 4
