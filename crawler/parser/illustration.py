@@ -8,6 +8,7 @@ from scrapy.selector import Selector
 from crawler.base import AbstractParser
 from crawler.logger import logger
 from crawler.parser.character import CharacterParser
+from crawler.parser.weapon import WeaponParser
 from crawler.utils.html_files import save_html_file
 from crawler.utils.url import add_url
 
@@ -77,7 +78,10 @@ class IllustrationParser(AbstractParser):
         res_info: Dict[str, Any] = dict()
 
         # parse character
-        res_info['角色'] = await self._parse_character(context_page, browser_context)
+        # res_info['角色'] = await self._parse_character(context_page, browser_context)
+
+        # parse weapon
+        res_info['武器'] = await self._parse_weapon(context_page, browser_context)
 
         return res_info
 
@@ -161,6 +165,85 @@ class IllustrationParser(AbstractParser):
 
         if tasks:
             await self._run_batch(tasks)
+
+        return res_info
+
+    async def _parse_weapon(
+        self,
+        context_page: Optional[Page] = None,
+        browser_context: Optional[BrowserContext] = None,
+    ) -> Dict[str, Any]:
+        """
+        parse weapon (武器)
+        :param page:
+        :return: res_info: Dict[str, Any]
+        """
+
+        res_info: Dict[str, Any] = dict()
+
+        url = 'https://bbs.mihoyo.com/ys/obc/channel/map/189/5?bbs_presentation_style=no_header&visit_device=pc'
+
+        # Open the page
+        await context_page.goto(url)
+
+        # Ensure all network activity is complete
+        await context_page.wait_for_load_state('networkidle')
+
+        # start parsing
+        logger.info('| Start parsing weapon...')
+
+        img_path = os.path.join(self.img_path, 'weapon')
+        os.makedirs(img_path, exist_ok=True)
+        html_path = os.path.join(self.html_path, 'weapon')
+        os.makedirs(html_path, exist_ok=True)
+
+        # Save a screenshot of the page
+        save_name = f'{0:04d}_full'
+        # await scroll_and_capture(
+        #     context_page, os.path.join(img_path, f'{save_name}.png')
+        # ) # TODO: Comment it out for now, as this method causes the page to scroll, which slows down the speed.
+
+        # Get the page content
+        content = await context_page.content()
+
+        # Save the HTML content to a file
+        save_html_file(content, os.path.join(html_path, f'{save_name}.html'))
+
+        # Get weapon list
+        selector = Selector(text=content)
+
+        weapon_list = selector.xpath('//a[@class="collection-avatar__item"]')
+
+        tasks = []
+        for idx, weapon in enumerate(weapon_list):
+            href = weapon.xpath('./@href').extract_first()
+            id = href.split('/')[4]
+
+            href = add_url(href)
+
+            icon = weapon.xpath(
+                './div[@class="collection-avatar__icon"]/@data-src'
+            ).extract_first()
+            name = weapon.xpath(
+                './div[@class="collection-avatar__title"]/text()'
+            ).extract_first()
+
+            weapon_parser = WeaponParser(
+                config=self.config,
+                url=href,
+                page_name=id,
+                weapon_name=name,
+                icon=icon,
+                img_path=img_path,
+                html_path=html_path,
+            )
+
+            tasks.append(weapon_parser.parse(browser_context))
+
+            # If batch size is reached, execute the tasks
+            if len(tasks) == self.config.batch_size:
+                await self._run_batch(tasks)
+                tasks = []  # Reset tasks for the next batch
 
         return res_info
 

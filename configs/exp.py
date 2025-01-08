@@ -17,4 +17,4 @@ save_data_option = 'json'
 user_data_dir = f'{platform}_user_data'
 
 # parser
-batch_size = 4
+batch_size = 1
