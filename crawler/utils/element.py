@@ -4,13 +4,13 @@ from crawler.utils.html_files import save_html_file
 
 
 async def save_element_overleaf(
-    page, element, save_name, img_path, html_path, set_height_scale
+    page, element, save_name, img_path, html_path, set_width_scale, set_height_scale
 ):  # type: ignore
     """Save the screenshot of an element to a file"""
     original_viewport_size = page.viewport_size
 
     set_size = {
-        'width': original_viewport_size['width'],
+        'width': int(original_viewport_size['width'] * set_width_scale),
         'height': int(original_viewport_size['height'] * set_height_scale),
     }
     await page.set_viewport_size(set_size)

@@ -130,11 +130,7 @@ class IllustrationParser(AbstractParser):
         tasks = []
         for idx, character in enumerate(character_list):
             href = character.xpath('./@href').extract_first()
-            id = href.split(
-                '/'
-            )[
-                4
-            ]  # /ys/obc/content/503613/detail?bbs_presentation_style=no_header -> 503613
+            id = href.split('/')[4]  # Extract the character ID from the URL
             href = add_url(href)
             icon = character.xpath(
                 './div[@class="collection-avatar__icon"]/@data-src'
@@ -142,6 +138,9 @@ class IllustrationParser(AbstractParser):
             name = character.xpath(
                 './div[@class="collection-avatar__title"]/text()'
             ).extract_first()
+
+            if '预告' in name:
+                continue
 
             character_parser = CharacterParser(
                 config=self.config,
