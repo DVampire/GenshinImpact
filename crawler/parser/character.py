@@ -1403,9 +1403,6 @@ class CharacterParser(AbstractParser):
 
         timeline_items = selector.xpath('.//div[@class="timeline-content"]')
         for timeline_item in timeline_items:
-            """
-            <div class="timeline-content"><div class="timeline-content__h3"><h3 class="obc-timeline-h3">「2024.11.25」角色登场</h3></div> <div class="timeline-content__inner"><div class="timeline-content__inner--title timeline-content__inner--decorate"><h4>至明、至炽、至烈的再临之火</h4></div> <div class="timeline-content__inner--desc"><p></p><p><span class="custom-image-view" data-image-url="https://act-upload.mihoyo.com/wiki-user-upload/2024/12/27/50494840/6035fd07c220a42374ce922f85c70f38_6182800280337783475.jpg" data-image-unit="px" data-image-width="690"><span class="custom-image-wrapper" style="width: 690px;"><span style=""><img data-preview="true" class="custom-image" src="https://act-upload.mihoyo.com/wiki-user-upload/2024/12/27/50494840/6035fd07c220a42374ce922f85c70f38_6182800280337783475.jpg?x-oss-process=image%2Fformat%2Cwebp" style="width: 690px;"></span></span></span></p><p><span style="color: rgb(24, 25, 28)">「此等耀眼的星命，在提瓦特纷繁的夜空中也异乎寻常。那灼热的光焰，简直像要把天幕烧出一个洞来。当某日其化作流星划过天际，那火光定将令最深沉的寒夜都灼如白昼。」</span></p><p><span style="color: rgb(24, 25, 28)">——魔女「B」在某次占星时感叹道</span></p><p></p><p><span style="color: rgb(24, 25, 28)">「玛薇卡？哦！你说在圣火竞技场和我比试的那位！哈哈哈，神明的酒量也不过如此嘛！呃…什么？他们说我先醉倒的？绝不可能！我那天可是…咦，我那天是为了什么去找火神来着…」</span></p><p><span style="color: rgb(24, 25, 28)">——被艾莉丝问及纳塔「会面」的成果时挠头思考的法尔伽</span></p><p>链接：<a href="https://www.miyoushe.com/ys/article/59665628" target="_blank">至明、至炽、至烈的再临之火</a></p></div></div></div>
-            """
             item: Dict[str, Any] = dict()
 
             item['时间'] = timeline_item.xpath('.//h3//text()').get().strip()
