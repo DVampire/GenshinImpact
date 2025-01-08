@@ -264,7 +264,8 @@ class CharacterParser(AbstractParser):
             )
             materials = []
             for material in material_list:
-                icon_url = add_url(material.xpath('.//a/@href').get())
+                url = add_url(material.xpath('.//a/@href').get())
+                icon_url = material.xpath('.//img/@src').get()
                 name = (
                     material.xpath('.//span[@class="obc-tmpl__icon-text"]/text()')
                     .get()
@@ -276,7 +277,9 @@ class CharacterParser(AbstractParser):
                     .strip()
                     .replace('*', '')
                 )
-                materials.append({'name': name, 'amount': amount, 'icon_url': icon_url})
+                materials.append(
+                    {'name': name, 'amount': amount, 'url': url, 'icon_url': icon_url}
+                )
             item['突破材料'] = materials
 
             # Get the ascension attributes
