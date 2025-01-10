@@ -154,9 +154,6 @@ class AchievementParser(AbstractParser):
     ) -> Dict[str, Any]:
         res_info: Dict[str, Any] = dict()
 
-        save_name = f'{self.save_id:04d}_攻略推荐'
-        self.save_id += 1
-
         logger.info('| Start parsing page - 攻略推荐 - element...')
 
         try:
@@ -165,6 +162,9 @@ class AchievementParser(AbstractParser):
             element = context_page.locator(
                 'div.wiki-consumer-module-strategy.obc-tmpl-part.obc-tmpl-strategy'
             ).first  # type: ignore
+
+            save_name = f'{self.save_id:04d}_攻略推荐'
+            self.save_id += 1
 
             content, img_path, html_path = await save_element_overleaf(
                 page=context_page,
@@ -248,7 +248,5 @@ class AchievementParser(AbstractParser):
         )
         if recommend_strategy_info:
             res_info['攻略推荐'] = recommend_strategy_info
-
-        print(res_info)
 
         return res_info

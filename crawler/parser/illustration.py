@@ -11,6 +11,9 @@ from crawler.parser.illustraction_pages import (
     AchievementParser,
     ArtifactParser,
     CharacterParser,
+    EnemyParser,
+    FoodParser,
+    MapTextParser,
     WeaponParser,
 )
 from crawler.utils.url import add_url
@@ -390,6 +393,261 @@ class IllustrationParser(AbstractParser):
 
         return res_info
 
+    async def _parse_enemy(
+        self, context_page: Page, browser_context: BrowserContext
+    ) -> Dict[str, Any]:
+        res_info: Dict[str, Any] = dict()
+
+        url = 'https://bbs.mihoyo.com/ys/obc/channel/map/189/6?bbs_presentation_style=no_header&visit_device=pc'
+
+        # Open the page
+        await context_page.goto(url)
+
+        # Ensure all network activity is complete
+        await context_page.wait_for_load_state('networkidle')
+
+        # start parsing
+        logger.info('| Start parsing enemy...')
+
+        save_name = f'{self.save_id:04d}_full'
+        self.save_id += 1
+
+        # Save a screenshot of the page
+        content, img_path, html_path = await self._save_screenshot(
+            context_page=context_page,
+            save_name=save_name,
+            browser_context=browser_context,
+            save_screen=self.save_screen,
+        )
+
+        # Save the results to the dictionary
+        res_info['url'] = self.url
+        res_info['id'] = 'enemy'
+        res_info['name'] = 'enemy'
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+
+        selector = Selector(text=content)
+
+        enemy_list = selector.xpath('//a[@class="monster-image"]')
+
+        img_dir = os.path.join(self.img_path, 'enemy')
+        os.makedirs(img_dir, exist_ok=True)
+        html_dir = os.path.join(self.html_path, 'enemy')
+        os.makedirs(html_dir, exist_ok=True)
+
+        tasks = []
+        enemies_info = []
+
+        for idx, enemy in enumerate(enemy_list):
+            href = enemy.xpath('./@href').extract_first()
+            id = href.split('/')[4]
+
+            href = add_url(href)
+
+            icon = enemy.xpath(
+                './/div[@class="monster-image__top--image"]/img/@data-src'
+            ).extract_first()
+            name = enemy.xpath(
+                './/div[@class="monster-image__top--title"]/text()'
+            ).extract_first()
+
+            enemy_parser = EnemyParser(
+                config=self.config,
+                url=href,
+                id=id,
+                name=name,
+                icon=icon,
+                img_path=img_dir,
+                html_path=html_dir,
+            )
+
+            tasks.append(enemy_parser.parse(browser_context))
+
+            # If batch size is reached, execute the tasks
+            if len(tasks) == self.config.batch_size:
+                enemies_info.extend(await self._run_batch(tasks))
+                tasks = []
+
+        if tasks:
+            enemies_info.extend(await self._run_batch(tasks))
+
+        res_info['data'].update({item['name']: item for item in enemies_info})
+
+        return res_info
+
+    async def _parse_map_text(
+        self,
+        context_page: Optional[Page] = None,
+        browser_context: Optional[BrowserContext] = None,
+    ) -> Dict[str, Any]:
+        """
+        parse 地图文本
+        :param context_page:
+        :param browser_context:
+        :return:
+        """
+
+        res_info: Dict[str, Any] = dict()
+
+        url = 'https://bbs.mihoyo.com/ys/obc/channel/map/189/251?bbs_presentation_style=no_header&visit_device=pc'
+
+        # Open the page
+        await context_page.goto(url)
+
+        # Ensure all network activity is complete
+        await context_page.wait_for_load_state('networkidle')
+
+        # start parsing
+        logger.info('| Start parsing map text...')
+        save_name = f'{self.save_id:04d}_full'
+        self.save_id += 1
+
+        # Save a screenshot of the page
+        content, img_path, html_path = await self._save_screenshot(
+            context_page=context_page,
+            save_name=save_name,
+            browser_context=browser_context,
+            save_screen=self.save_screen,
+        )
+
+        # Save the results to the dictionary
+        res_info['url'] = self.url
+        res_info['id'] = 'map_text'
+        res_info['name'] = 'map_text'
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+
+        selector = Selector(text=content)
+
+        map_text_list = selector.xpath(
+            '//ul[@class="position-list__list position-list__list--default"]'
+        ).xpath('.//li')
+
+        img_dir = os.path.join(self.img_path, 'map_text')
+        os.makedirs(img_dir, exist_ok=True)
+        html_dir = os.path.join(self.html_path, 'map_text')
+        os.makedirs(html_dir, exist_ok=True)
+
+        tasks = []
+        map_texts_info = []
+        for idx, map_text in enumerate(map_text_list):
+            map_text = map_text.xpath('.//a')
+            href = map_text.xpath('./@href').extract_first()
+            id = href.split('/')[4]
+
+            href = add_url(href)
+
+            icon = map_text.xpath('.//img/@data-src').extract_first()
+            name = map_text.xpath('./@title').extract_first()
+
+            map_text_parser = MapTextParser(
+                config=self.config,
+                url=href,
+                id=id,
+                name=name,
+                icon=icon,
+                img_path=img_dir,
+                html_path=html_dir,
+            )
+
+            tasks.append(map_text_parser.parse(browser_context))
+
+            # If batch size is reached, execute the tasks
+            if len(tasks) == self.config.batch_size:
+                map_texts_info.extend(await self._run_batch(tasks))
+                tasks = []
+
+        if tasks:
+            map_texts_info.extend(await self._run_batch(tasks))
+
+        res_info['data'].update({item['name']: item for item in map_texts_info})
+
+        return res_info
+
+    async def _parse_food(
+        self,
+        context_page: Optional[Page] = None,
+        browser_context: Optional[BrowserContext] = None,
+    ) -> Dict[str, Any]:
+        res_info: Dict[str, Any] = dict()
+
+        url = 'https://bbs.mihoyo.com/ys/obc/channel/map/189/21?bbs_presentation_style=no_header&visit_device=pc'
+
+        # Open the page
+        await context_page.goto(url)
+
+        # Ensure all network activity is complete
+        await context_page.wait_for_load_state('networkidle')
+
+        # start parsing
+        logger.info('| Start parsing food...')
+        save_name = f'{self.save_id:04d}_full'
+        self.save_id += 1
+
+        # Save a screenshot of the page
+        content, img_path, html_path = await self._save_screenshot(
+            context_page=context_page,
+            save_name=save_name,
+            browser_context=browser_context,
+            save_screen=self.save_screen,
+        )
+
+        # Save the results to the dictionary
+        res_info['url'] = self.url
+        res_info['id'] = 'food'
+        res_info['name'] = 'food'
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+
+        selector = Selector(text=content)
+
+        food_list = selector.xpath('//a[@class="monster-image"]')
+
+        img_dir = os.path.join(self.img_path, 'food')
+        os.makedirs(img_dir, exist_ok=True)
+        html_dir = os.path.join(self.html_path, 'food')
+        os.makedirs(html_dir, exist_ok=True)
+
+        tasks = []
+        foods_info = []
+        for idx, food in enumerate(food_list):
+            href = food.xpath('./@href').extract_first()
+            id = href.split('/')[4]
+
+            href = add_url(href)
+
+            icon = food.xpath(
+                './/div[@class="monster-image__top--image"]/img/@data-src'
+            ).extract_first()
+            name = food.xpath(
+                './/div[@class="monster-image__top--title"]/text()'
+            ).extract_first()
+
+            food_parser = FoodParser(
+                config=self.config,
+                url=href,
+                id=id,
+                name=name,
+                icon=icon,
+                img_path=img_dir,
+                html_path=html_dir,
+            )
+
+            tasks.append(food_parser.parse(browser_context))
+
+            # If batch size is reached, execute the tasks
+            if len(tasks) == self.config.batch_size:
+                foods_info.extend(await self._run_batch(tasks))
+                tasks = []
+
+        if tasks:
+            foods_info.extend(await self._run_batch(tasks))
+
+        res_info['data'].update({item['name']: item for item in foods_info})
+
+        return res_info
+
     async def _run_batch(self, tasks):
         """
         Run a batch of tasks and handle any potential errors.
@@ -415,5 +673,11 @@ class IllustrationParser(AbstractParser):
         res_info['圣遗物'] = await self._parse_artifact(context_page, browser_context)
 
         res_info['成就'] = await self._parse_achievement(context_page, browser_context)
+
+        res_info['敌人'] = await self._parse_enemy(context_page, browser_context)
+
+        res_info['地图文本'] = await self._parse_map_text(context_page, browser_context)
+
+        res_info['食物'] = await self._parse_food(context_page, browser_context)
 
         return res_info

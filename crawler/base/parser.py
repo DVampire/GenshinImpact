@@ -79,9 +79,6 @@ class AbstractParser(ABC):
         self.html_path = os.path.join(self.html_path, self.id)
         os.makedirs(self.html_path, exist_ok=True)
 
-        print(self.img_path)
-        print(self.html_path)
-
         # Save a screenshot of the page
         content, img_path, html_path = await self._save_screenshot(
             context_page=context_page,
