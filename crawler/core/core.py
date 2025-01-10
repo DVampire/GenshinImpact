@@ -111,34 +111,51 @@ class Crawler(AbstractCrawler):
             return browser_context
 
     async def search(self):
-        # # wiki (观测 Wiki)
+        # wiki (观测 Wiki)
         # url = 'https://bbs.mihoyo.com/ys/obc/?bbs_presentation_style=no_header&visit_device=pc'
-        # page_name = 'wiki'
-        # wiki_parser = WikiParser(config=self.config, url=url, page_name=page_name)
+        # wiki_parser = WikiParser(config=self.config,
+        #                          url=url,
+        #                          id='wiki',
+        #                          name='wiki',
+        #                          img_path=self.config.img_path,
+        #                          html_path=self.config.html_path,
+        #                          )
         # wiki_res_info = await wiki_parser.parse(self.browser_context)
-        # logger.info(f'Wiki modules: {wiki_res_info.keys()}')
+        # logger.info(f'Wiki: {wiki_res_info}')
         #
         # # strategy (观测 攻略)
         # url = 'https://bbs.mihoyo.com/ys/strategy/?bbs_presentation_style=no_header'
-        # page_name = 'strategy'
-        # strategy_parser = StrategyParser(
-        #     config=self.config, url=url, page_name=page_name
-        # )
+        # strategy_parser = StrategyParser(config=self.config,
+        #                                  url=url,
+        #                                  id='strategy',
+        #                                  name='strategy',
+        #                                  img_path=self.config.img_path,
+        #                                  html_path=self.config.html_path,
+        #                                  )
         # strategy_res_info = await strategy_parser.parse(self.browser_context)
-        # logger.info(f'Strategy modules: {strategy_res_info.keys()}')
+        # logger.info(f'Strategy: {strategy_res_info}')
         #
         # # summon (观测 七圣召唤)
         # url = 'https://bbs.mihoyo.com/ys/strategy/summon?bbs_presentation_style=no_header'
-        # page_name = 'summon'
-        # summon_parser = SummonParser(config=self.config, url=url, page_name=page_name)
+        # summon_parser = SummonParser(config=self.config,
+        #                              url=url,
+        #                              id='summon',
+        #                              name='summon',
+        #                              img_path=self.config.img_path,
+        #                              html_path=self.config.html_path,
+        #                              )
         # summon_res_info = await summon_parser.parse(self.browser_context)
-        # logger.info(f'Summon modules: {summon_res_info.keys()}')
+        # logger.info(f'Summon: {summon_res_info}')
 
         # illustration (首页 图鉴)
         url = 'https://bbs.mihoyo.com/ys/obc/channel/map/189/25?bbs_presentation_style=no_header&visit_device=pc'
-        page_name = 'illustration'
         illustration_parser = IllustrationParser(
-            config=self.config, url=url, page_name=page_name
+            config=self.config,
+            url=url,
+            id='illustration',
+            name='illustration',
+            img_path=self.config.img_path,
+            html_path=self.config.html_path,
         )
         illustration_res_info = await illustration_parser.parse(self.browser_context)
-        logger.info(f'Illustration modules: {illustration_res_info.keys()}')
+        logger.info(f'Illustration: {illustration_res_info}')

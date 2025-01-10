@@ -1,12 +1,12 @@
-import os
-from typing import Any, Dict, List, Optional
+import asyncio
+from typing import Any, Dict, Optional
 
 from playwright.async_api import BrowserContext, Page
 from scrapy.selector import Selector
 
 from crawler.base import AbstractParser
 from crawler.logger import logger
-from crawler.utils.element import save_element
+from crawler.utils.element import save_element_overleaf
 from crawler.utils.url import add_url
 
 __all__ = [
@@ -15,49 +15,297 @@ __all__ = [
 
 
 class WikiParser(AbstractParser):
-    def __init__(self, config, url: str, page_name='wiki') -> None:
-        self.config = config
-        self.url = url
-        self.page_name = page_name
-
-    async def parse(
+    def __init__(
         self,
-        browser_context: Optional[BrowserContext] = None,
+        *args,
+        config,
+        url: str,
+        img_path: str,
+        html_path: str,
+        id: str = 'wiki',
+        name: str = 'wiki',
+        **kwargs,
+    ) -> None:
+        # Initialize the parent class
+        super().__init__(
+            config=config,
+            url=url,
+            id=id,
+            name=name,
+            img_path=img_path,
+            html_path=html_path,
+        )
+
+    async def _parse_quick_navigation(
+        self,
+        context_page: Page,
+        browser_context: BrowserContext,
     ) -> Dict[str, Any]:
-        """
-        parse page
-        :param page:
-        :return:
-        """
-        # New a context page
-        context_page = await browser_context.new_page()
+        res_info: Dict[str, Any] = dict()
 
-        logger.info(f'| Go to the page {self.url}')
-        # Open the page
-        await context_page.goto(self.url)
+        logger.info('| Start parsing page - 快捷导航 - element...')
 
-        # Ensure all network activity is complete
-        await context_page.wait_for_load_state('networkidle')
+        save_name = f'{self.save_id:04d}_快捷导航'
+        self.save_id += 1
 
-        logger.info('| Start parsing page...')
+        element = context_page.locator('ul.home__map').nth(0)
 
-        self.img_path = os.path.join(self.config.img_path, self.page_name)
-        os.makedirs(self.img_path, exist_ok=True)
-        self.html_path = os.path.join(self.config.html_path, self.page_name)
-        os.makedirs(self.html_path, exist_ok=True)
+        # Capture a screenshot of the element
+        content, img_path, html_path = await save_element_overleaf(
+            page=context_page,
+            element=element,
+            save_name=save_name,
+            img_path=self.img_path,
+            html_path=self.html_path,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
+        )
 
-        # Save a screenshot of the page
-        await self._save_screenshot(
-            context_page, browser_context
-        )  # TODO: Comment it out for now, as this method causes the page to scroll, which slows down the speed.
+        # Save the results to the dictionary
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()  # type: ignore
 
-        # Parse the page
-        res_info = await self._parse(context_page, browser_context)
+        element = Selector(text=content)
 
-        logger.info('| Finish parsing page...')
+        item_info: Dict[str, Any] = dict()
 
-        # Close the context page
-        await context_page.close()
+        sub_elements_list = element.css('div.kingkong-16-item')
+        for idx, sub_element in enumerate(sub_elements_list):
+            # Get the text of the sub element
+            url = add_url(sub_element.css('a::attr(href)').get())
+            image_urls = sub_element.css('img::attr(data-src)').getall()
+            image_url1 = image_urls[0]
+            image_url2 = image_urls[1]
+
+            item_info[str(idx)] = {
+                'url': url,
+                'image_url1': image_url1,
+                'image_url2': image_url2,
+            }
+
+        res_info['data']['快捷链接'] = item_info
+
+        logger.info('| Finish parsing page - 快捷导航 - element...')
+
+        return res_info
+
+    async def _parse_calendar(
+        self,
+        context_page: Page,
+        browser_context: BrowserContext,
+    ) -> Dict[str, Any]:
+        res_info: Dict[str, Any] = dict()
+
+        logger.info('| Start parsing page - 日历 - element...')
+
+        save_name = f'{self.save_id:04d}_日历'
+        self.save_id += 1
+
+        element = context_page.locator('ul.home__map').nth(1)
+
+        # Capture a screenshot of the element
+        content, img_path, html_path = await save_element_overleaf(
+            page=context_page,
+            element=element,
+            save_name=save_name,
+            img_path=self.img_path,
+            html_path=self.html_path,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
+        )
+
+        # Save the results to the dictionary
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()
+
+        logger.info('| Finish parsing page - 日历 - element...')
+
+        return res_info
+
+    async def _parse_illustration(
+        self,
+        context_page: Page,
+        browser_context: BrowserContext,
+    ) -> Dict[str, Any]:
+        res_info: Dict[str, Any] = dict()
+
+        logger.info('| Start parsing page - 图鉴 - element...')
+
+        save_name = f'{self.save_id:04d}_图鉴'
+        self.save_id += 1
+
+        element = context_page.locator('ul.home__map').nth(2)
+
+        # Capture a screenshot of the element
+        content, img_path, html_path = await save_element_overleaf(
+            page=context_page,
+            element=element,
+            save_name=save_name,
+            img_path=self.img_path,
+            html_path=self.html_path,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
+        )
+
+        # Save the results to the dictionary
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()
+
+        logger.info('| Finish parsing page - 图鉴 - element...')
+
+        return res_info
+
+    async def _parse_cards_info(
+        self,
+        context_page: Page,
+        browser_context: BrowserContext,
+    ) -> Dict[str, Any]:
+        res_info: Dict[str, Any] = dict()
+
+        logger.info('| Start parsing page - 卡牌图鉴 - element...')
+        save_name = f'{self.save_id:04d}_卡牌图鉴'
+        self.save_id += 1
+
+        element = context_page.locator('ul.home__map').nth(3)
+        element = element.locator('li.home__position').nth(0)
+
+        # Capture a screenshot of the element
+        content, img_path, html_path = await save_element_overleaf(
+            page=context_page,
+            element=element,
+            save_name=save_name,
+            img_path=self.img_path,
+            html_path=self.html_path,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
+        )
+
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()
+
+        logger.info('| Finish parsing page - 卡牌图鉴 - element...')
+
+        return res_info
+
+    async def _parse_video_gallery(
+        self,
+        context_page: Page,
+        browser_context: BrowserContext,
+    ) -> Dict[str, Any]:
+        res_info: Dict[str, Any] = dict()
+
+        logger.info('| Start parsing page - 影音回廊 - element...')
+        save_name = f'{self.save_id:04d}_影音回廊'
+        self.save_id += 1
+
+        element = context_page.locator('ul.home__map').nth(3)
+        element = element.locator('li.home__position').nth(1)
+
+        # Capture a screenshot of the element
+        content, img_path, html_path = await save_element_overleaf(
+            page=context_page,
+            element=element,
+            save_name=save_name,
+            img_path=self.img_path,
+            html_path=self.html_path,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
+        )
+
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()
+
+        logger.info('| Finish parsing page - 影音回廊 - element...')
+
+        return res_info
+
+    async def _parse_observation(
+        self,
+        context_page: Page,
+        browser_context: BrowserContext,
+    ) -> Dict[str, Any]:
+        res_info: Dict[str, Any] = dict()
+
+        logger.info('| Start parsing page - 观测 - element...')
+        save_name = f'{self.save_id:04d}_观测'
+        self.save_id += 1
+
+        element = context_page.locator('ul.home__map').nth(3)
+        element = element.locator('li.home__position').nth(2)
+
+        # Capture a screenshot of the element
+        content, img_path, html_path = await save_element_overleaf(
+            page=context_page,
+            element=element,
+            save_name=save_name,
+            img_path=self.img_path,
+            html_path=self.html_path,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
+        )
+
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()
+
+        logger.info('| Finish parsing page - 观测 - element...')
+
+        return res_info
+
+    async def _parse_indexing(
+        self,
+        context_page: Page,
+        browser_context: BrowserContext,
+    ) -> Dict[str, Any]:
+        res_info: Dict[str, Any] = dict()
+
+        logger.info('| Start parsing page - 各类索引 - element...')
+        save_name = f'{self.save_id:04d}_各类索引'
+        self.save_id += 1
+
+        element = context_page.locator('ul.home__map').nth(3)
+        element = element.locator('li.home__position').nth(3)
+
+        # Capture a screenshot of the element
+        content, img_path, html_path = await save_element_overleaf(
+            page=context_page,
+            element=element,
+            save_name=save_name,
+            img_path=self.img_path,
+            html_path=self.html_path,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
+        )
+
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()
+
+        element = Selector(text=content)
+
+        item_info: Dict[str, Any] = dict()
+
+        sub_elements_list = element.css('li.position-list__item')
+
+        for sub_element in sub_elements_list:
+            url = add_url(sub_element.css('a::attr(href)').get())
+            name = sub_element.css('a::attr(title)').get()
+            image_url = sub_element.css('img::attr(data-src)').get()
+
+            item_info[name] = {
+                'url': url,
+                'name': name,
+                'image_url': image_url,
+            }
+
+        res_info['data']['各类索引'] = item_info
+
+        logger.info('| Finish parsing page - 各类索引 - element...')
 
         return res_info
 
@@ -73,234 +321,28 @@ class WikiParser(AbstractParser):
 
         res_info: Dict[str, Any] = dict()
 
-        class_name = 'ul.home__map'
         # Wait for the element to load
-        await context_page.wait_for_selector(class_name)  # type: ignore
-        # Locate the matching elements
-        elements = context_page.locator(class_name)
+        await context_page.wait_for_selector('ul.home__map')  # type: ignore
+        await asyncio.sleep(1)
 
-        ###################################Get the 快捷导航##########################################
-        res_quick_navigation_info: Dict[str, Any] = dict()
-
-        logger.info('| Start parsing page - 快捷导航 - element...')
-        save_name = f'{1:04d}_快捷导航'
-
-        element = elements.nth(0)
-
-        # Capture a screenshot of the element
-        content, img_path, html_path = await save_element(
-            element=element,
-            save_name=save_name,
-            img_path=self.img_path,
-            html_path=self.html_path,
+        res_info['快捷导航'] = await self._parse_quick_navigation(
+            context_page, browser_context
         )
 
-        # Save the results to the dictionary
-        res_quick_navigation_info['element_img_path'] = img_path
-        res_quick_navigation_info['element_html_path'] = html_path
-        logger.info('| Finish parsing page - 快捷导航 - element...')
+        res_info['日历'] = await self._parse_calendar(context_page, browser_context)
 
-        # Convert the element to scrapy selector
-        element = Selector(text=content)
+        res_info['图鉴'] = await self._parse_illustration(context_page, browser_context)
 
-        logger.info('| Start parsing page - 快捷导航 - sub elements...')
-        # Start get sub elements
-        res_quick_navigation_info['element_data']: List[Dict[str, Any]] = []  # type: ignore
-        sub_class_name = 'div.kingkong-16-item'
-
-        sub_elements = element.css(sub_class_name)
-        for sub_element in sub_elements:
-            item: Dict[str, Any] = dict()
-
-            # Get the text of the sub element
-            item['href'] = add_url(sub_element.css('a::attr(href)').get())
-            item['images'] = sub_element.css('img::attr(data-src)').getall()
-
-            res_quick_navigation_info['element_data'].append(item)
-
-        logger.info('| Finish parsing page - 快捷导航 - sub elements...')
-
-        res_info['快捷导航'] = res_quick_navigation_info
-        ###################################Get the 快捷导航##########################################
-
-        ###################################Get the 日历##################################################
-        res_calendar_info: Dict[str, Any] = dict()
-
-        logger.info('| Start parsing page - 日历 - element...')
-        save_name = f'{2:04d}_日历'
-
-        element = elements.nth(1)  # the second element
-
-        # Capture a screenshot of the element
-        content, img_path, html_path = await save_element(
-            element=element,
-            save_name=save_name,
-            img_path=self.img_path,
-            html_path=self.html_path,
+        res_info['卡牌图鉴'] = await self._parse_cards_info(
+            context_page, browser_context
         )
 
-        res_calendar_info['element_img_path'] = img_path
-        res_calendar_info['element_html_path'] = html_path
-        res_calendar_info['element_data']: List[Dict[str, Any]] = []  # type: ignore
-        logger.info('| Finish parsing page - 日历 - element...')
-
-        # TODO: DO NOT parse the sub elements of 日历 for now, as it is not necessary.
-
-        res_info['日历'] = res_calendar_info
-        ###################################Get the 日历##################################################
-
-        ###################################Get the 图鉴##############################################
-        res_illustration_info: Dict[str, Any] = dict()
-
-        logger.info('| Start parsing page - 图鉴 - element...')
-        save_name = f'{3:04d}_图鉴'
-
-        element = elements.nth(2)  # the third element
-
-        # Capture a screenshot of the element
-        content, img_path, html_path = await save_element(
-            element=element,
-            save_name=save_name,
-            img_path=self.img_path,
-            html_path=self.html_path,
+        res_info['影音回廊'] = await self._parse_video_gallery(
+            context_page, browser_context
         )
 
-        res_illustration_info['element_img_path'] = img_path
-        res_illustration_info['element_html_path'] = html_path
-        res_illustration_info['element_data']: List[Dict[str, Any]] = []  # type: ignore
+        res_info['观测'] = await self._parse_observation(context_page, browser_context)
 
-        logger.info('| Finish parsing page - 图鉴 - element...')
-
-        # TODO: DO NOT parse the sub elements of 图鉴 for now, as it is not necessary.
-
-        res_info['图鉴'] = res_illustration_info
-        ###################################Get the 图鉴##############################################
-
-        ###################################Get the 卡牌图鉴#####################################################
-        res_cards_info: Dict[str, Any] = dict()
-
-        logger.info('| Start parsing page - 卡牌图鉴 - element...')
-        save_name = f'{4:04d}_卡牌图鉴'
-
-        element = elements.nth(3)  # the fourth element
-        element = element.locator('li.home__position').nth(0)
-
-        # Capture a screenshot of the element
-        content, img_path, html_path = await save_element(
-            element=element,
-            save_name=save_name,
-            img_path=self.img_path,
-            html_path=self.html_path,
-        )
-
-        res_cards_info['element_img_path'] = img_path
-        res_cards_info['element_html_path'] = html_path
-        res_cards_info['element_data']: List[Dict[str, Any]] = []
-
-        logger.info('| Finish parsing page - 卡牌图鉴 - element...')
-        # TODO: DO NOT parse the sub elements of 卡牌图鉴 for now, as it is not necessary.
-
-        res_info['卡牌图鉴'] = res_cards_info
-        ###################################Get the 卡牌图鉴#####################################################
-
-        ###################################Get the 影音回廊#############################################
-        res_video_gallery_info: Dict[str, Any] = dict()
-
-        logger.info('| Start parsing page - 影音回廊 - element...')
-        save_name = f'{5:04d}_影音回廊'
-
-        element = elements.nth(3)  # the fourth element
-        element = element.locator('li.home__position').nth(1)
-
-        # Capture a screenshot of the element
-        content, img_path, html_path = await save_element(
-            element=element,
-            save_name=save_name,
-            img_path=self.img_path,
-            html_path=self.html_path,
-        )
-
-        res_video_gallery_info['element_img_path'] = img_path
-        res_video_gallery_info['element_html_path'] = html_path
-        res_video_gallery_info['element_data']: List[Dict[str, Any]] = []
-
-        logger.info('| Finish parsing page -影音回廊 - element...')
-        # TODO: DO NOT parse the sub elements of 影音回廊 for now, as it is not necessary.
-
-        res_info['影音回廊'] = res_video_gallery_info
-        ################################ Get the 影音回廊#############################################
-
-        ###################################Get the 观测#############################################
-        res_observation_info: Dict[str, Any] = dict()
-
-        logger.info('| Start parsing page - 观测 - element...')
-        save_name = f'{6:04d}_观测'
-
-        element = elements.nth(3)  # the fourth element
-        element = element.locator('li.home__position').nth(2)
-
-        # Capture a screenshot of the element
-        content, img_path, html_path = await save_element(
-            element=element,
-            save_name=save_name,
-            img_path=self.img_path,
-            html_path=self.html_path,
-        )
-
-        res_observation_info['element_img_path'] = img_path
-        res_observation_info['element_html_path'] = html_path
-        res_observation_info['element_data']: List[Dict[str, Any]] = []
-
-        logger.info('| Finish parsing page - 观测 - element...')
-        # TODO: DO NOT parse the sub elements of 观测 for now, as it is not necessary.
-
-        res_info['观测'] = res_observation_info
-        ###################################Get the observation#############################################
-
-        ###################################Get the 各类索引################################################
-        res_indexing_info: Dict[str, Any] = dict()
-
-        logger.info('| Start parsing page - 各类索引 - element...')
-        save_name = f'{7:04d}_各类索引'
-
-        element = elements.nth(3)  # the fourth element
-        element = element.locator('li.home__position').nth(3)
-
-        # Capture a screenshot of the element
-        content, img_path, html_path = await save_element(
-            element=element,
-            save_name=save_name,
-            img_path=self.img_path,
-            html_path=self.html_path,
-        )
-
-        res_indexing_info['element_img_path'] = img_path
-        res_indexing_info['element_html_path'] = html_path
-        res_indexing_info['element_data']: List[Dict[str, Any]] = []
-
-        logger.info('| Finish parsing page - 各类索引 - element...')
-
-        # Convert the element to scrapy selector
-        element = Selector(text=content)
-
-        logger.info('| Start parsing page - 各类索引 - sub elements...')
-        # Start get sub elements
-        sub_class_name = 'li.position-list__item'
-        sub_elements = element.css(sub_class_name)
-
-        for sub_element in sub_elements:
-            item: Dict[str, Any] = dict()
-
-            # Get the text of the sub element
-            item['href'] = add_url(sub_element.css('a::attr(href)').get())
-            item['title'] = sub_element.css('a::attr(title)').get()
-            item['images'] = sub_element.css('img::attr(data-src)').getall()
-            res_indexing_info['element_data'].append(item)
-
-        logger.info('| Finish parsing page - 各类索引 - sub elements...')
-
-        res_info['各类索引'] = res_indexing_info
-
-        ###################################Get the 各类索引################################################
+        res_info['各类索引'] = await self._parse_indexing(context_page, browser_context)
 
         return res_info

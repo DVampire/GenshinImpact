@@ -18,3 +18,6 @@ user_data_dir = f'{platform}_user_data'
 
 # parser
 batch_size = 1
+save_screen = False
+set_width_scale = 1.0
+set_height_scale = 4.0

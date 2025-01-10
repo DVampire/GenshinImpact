@@ -7,9 +7,12 @@ from scrapy.selector import Selector
 
 from crawler.base import AbstractParser
 from crawler.logger import logger
-from crawler.parser.character import CharacterParser
-from crawler.parser.weapon import WeaponParser
-from crawler.utils.html_files import save_html_file
+from crawler.parser.illustraction_pages import (
+    AchievementParser,
+    ArtifactParser,
+    CharacterParser,
+    WeaponParser,
+)
 from crawler.utils.url import add_url
 
 __all__ = [
@@ -18,88 +21,37 @@ __all__ = [
 
 
 class IllustrationParser(AbstractParser):
-    def __init__(self, config, url: str, page_name='wiki') -> None:
-        self.config = config
-        self.url = url
-        self.page_name = page_name
-
-    async def parse(
+    def __init__(
         self,
-        browser_context: Optional[BrowserContext] = None,
-    ) -> Dict[str, Any]:
-        """
-        parse page
-        :param page:
-        :return:
-        """
-        # New a context page
-        context_page = await browser_context.new_page()
-
-        logger.info(f'| Go to the page {self.url}')
-        # Open the page
-        await context_page.goto(self.url)
-
-        # Ensure all network activity is complete
-        await context_page.wait_for_load_state('networkidle')
-
-        logger.info('| Start parsing page...')
-
-        self.img_path = os.path.join(self.config.img_path, self.page_name)
-        os.makedirs(self.img_path, exist_ok=True)
-        self.html_path = os.path.join(self.config.html_path, self.page_name)
-        os.makedirs(self.html_path, exist_ok=True)
-
-        # Save a screenshot of the page
-        # await self._save_screenshot(
-        #     context_page,
-        #     browser_context
-        # )  # TODO: Comment it out for now, as this method causes the page to scroll, which slows down the speed.
-
-        # Parse the page
-        res_info = await self._parse(context_page, browser_context)
-
-        logger.info('| Finish parsing page...')
-
-        # Close the context page
-        await context_page.close()
-
-        return res_info
-
-    async def _parse(
-        self,
-        context_page: Optional[Page] = None,
-        browser_context: Optional[BrowserContext] = None,
-    ) -> Dict[str, Any]:
-        """
-        :param page:
-        :return: res_info: Dict[str, Any]
-        """
-
-        res_info: Dict[str, Any] = dict()
-
-        # parse character
-        # res_info['角色'] = await self._parse_character(context_page, browser_context)
-
-        # parse weapon
-        res_info['武器'] = await self._parse_weapon(context_page, browser_context)
-
-        return res_info
+        *args,
+        config,
+        url: str,
+        img_path: str,
+        html_path: str,
+        id: str = 'illustration',
+        name: str = 'illustration',
+        **kwargs,
+    ) -> None:
+        # Initialize the parent class
+        super().__init__(
+            config=config,
+            url=url,
+            id=id,
+            name=name,
+            img_path=img_path,
+            html_path=html_path,
+        )
 
     async def _parse_character(
         self,
         context_page: Optional[Page] = None,
         browser_context: Optional[BrowserContext] = None,
     ) -> Dict[str, Any]:
-        """
-        parse character (角色)
-        :param page:
-        :return: res_info: Dict[str, Any]
-        """
-
         res_info: Dict[str, Any] = dict()
 
         url = 'https://bbs.mihoyo.com/ys/obc/channel/map/189/25?bbs_presentation_style=no_header&visit_device=pc'
 
+        logger.info(f'| Go to the page {url}')
         # Open the page
         await context_page.goto(url)
 
@@ -108,30 +60,35 @@ class IllustrationParser(AbstractParser):
 
         # start parsing
         logger.info('| Start parsing character...')
-
-        img_path = os.path.join(self.img_path, 'character')
-        os.makedirs(img_path, exist_ok=True)
-        html_path = os.path.join(self.html_path, 'character')
-        os.makedirs(html_path, exist_ok=True)
+        save_name = f'{self.save_id:04d}_full'
+        self.save_id += 1
 
         # Save a screenshot of the page
-        save_name = f'{0:04d}_full'
-        # await scroll_and_capture(
-        #     context_page, os.path.join(img_path, f'{save_name}.png')
-        # ) # TODO: Comment it out for now, as this method causes the page to scroll, which slows down the speed.
+        content, img_path, html_path = await self._save_screenshot(
+            context_page=context_page,
+            save_name=save_name,
+            browser_context=browser_context,
+            save_screen=self.save_screen,
+        )
 
-        # Get the page content
-        content = await context_page.content()
+        # Save the results to the dictionary
+        res_info['url'] = self.url
+        res_info['id'] = 'character'
+        res_info['name'] = 'character'
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
 
-        # Save the HTML content to a file
-        save_html_file(content, os.path.join(html_path, f'{save_name}.html'))
-
-        # Get character list
         selector = Selector(text=content)
 
         character_list = selector.xpath('//a[@class="collection-avatar__item"]')
 
+        img_dir = os.path.join(self.img_path, 'character')
+        os.makedirs(img_dir, exist_ok=True)
+        html_dir = os.path.join(self.html_path, 'character')
+        os.makedirs(html_dir, exist_ok=True)
+
         tasks = []
+        characters_info = []
         for idx, character in enumerate(character_list):
             href = character.xpath('./@href').extract_first()
             id = href.split('/')[4]  # Extract the character ID from the URL
@@ -149,22 +106,26 @@ class IllustrationParser(AbstractParser):
             character_parser = CharacterParser(
                 config=self.config,
                 url=href,
-                page_name=id,
-                character_name=name,
+                id=id,
+                name=name,
                 icon=icon,
-                img_path=img_path,
-                html_path=html_path,
+                img_path=img_dir,
+                html_path=html_dir,
             )
 
             tasks.append(character_parser.parse(browser_context))
 
             # If batch size is reached, execute the tasks
             if len(tasks) == self.config.batch_size:
-                await self._run_batch(tasks)
+                characters_info.extend(await self._run_batch(tasks))
                 tasks = []  # Reset tasks for the next batch
 
         if tasks:
-            await self._run_batch(tasks)
+            characters_info.extend(await self._run_batch(tasks))
+
+        res_info['data'].update({item['name']: item for item in characters_info})
+
+        logger.info('| Finish parsing character...')
 
         return res_info
 
@@ -191,30 +152,35 @@ class IllustrationParser(AbstractParser):
 
         # start parsing
         logger.info('| Start parsing weapon...')
-
-        img_path = os.path.join(self.img_path, 'weapon')
-        os.makedirs(img_path, exist_ok=True)
-        html_path = os.path.join(self.html_path, 'weapon')
-        os.makedirs(html_path, exist_ok=True)
+        save_name = f'{self.save_id:04d}_full'
+        self.save_id += 1
 
         # Save a screenshot of the page
-        save_name = f'{0:04d}_full'
-        # await scroll_and_capture(
-        #     context_page, os.path.join(img_path, f'{save_name}.png')
-        # ) # TODO: Comment it out for now, as this method causes the page to scroll, which slows down the speed.
+        content, img_path, html_path = await self._save_screenshot(
+            context_page=context_page,
+            save_name=save_name,
+            browser_context=browser_context,
+            save_screen=self.save_screen,
+        )
 
-        # Get the page content
-        content = await context_page.content()
+        # Save the results to the dictionary
+        res_info['url'] = self.url
+        res_info['id'] = 'weapon'
+        res_info['name'] = 'weapon'
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
 
-        # Save the HTML content to a file
-        save_html_file(content, os.path.join(html_path, f'{save_name}.html'))
-
-        # Get weapon list
         selector = Selector(text=content)
 
         weapon_list = selector.xpath('//a[@class="collection-avatar__item"]')
 
+        img_dir = os.path.join(self.img_path, 'weapon')
+        os.makedirs(img_dir, exist_ok=True)
+        html_dir = os.path.join(self.html_path, 'weapon')
+        os.makedirs(html_dir, exist_ok=True)
+
         tasks = []
+        weapons_info = []
         for idx, weapon in enumerate(weapon_list):
             href = weapon.xpath('./@href').extract_first()
             id = href.split('/')[4]
@@ -231,19 +197,196 @@ class IllustrationParser(AbstractParser):
             weapon_parser = WeaponParser(
                 config=self.config,
                 url=href,
-                page_name=id,
-                weapon_name=name,
+                id=id,
+                name=name,
                 icon=icon,
-                img_path=img_path,
-                html_path=html_path,
+                img_path=img_dir,
+                html_path=html_dir,
             )
 
             tasks.append(weapon_parser.parse(browser_context))
 
             # If batch size is reached, execute the tasks
             if len(tasks) == self.config.batch_size:
-                await self._run_batch(tasks)
+                weapons_info.extend(await self._run_batch(tasks))
                 tasks = []  # Reset tasks for the next batch
+
+        if tasks:
+            weapons_info.extend(await self._run_batch(tasks))
+
+        res_info['data'].update({item['name']: item for item in weapons_info})
+
+        return res_info
+
+    async def _parse_artifact(
+        self, context_page: Page, browser_context: BrowserContext
+    ) -> Dict[str, Any]:
+        """
+        parse 圣遗物
+        :param context_page:
+        :param browser_context:
+        :return:
+        """
+
+        res_info: Dict[str, Any] = dict()
+
+        url = 'https://bbs.mihoyo.com/ys/obc/channel/map/189/218?bbs_presentation_style=no_header&visit_device=pc'
+
+        # Open the page
+        await context_page.goto(url)
+
+        # Ensure all network activity is complete
+        await context_page.wait_for_load_state('networkidle')
+
+        # start parsing
+        logger.info('| Start parsing artifact...')
+        save_name = f'{self.save_id:04d}_full'
+        self.save_id += 1
+
+        # Save a screenshot of the page
+        content, img_path, html_path = await self._save_screenshot(
+            context_page=context_page,
+            save_name=save_name,
+            browser_context=browser_context,
+            save_screen=self.save_screen,
+        )
+
+        # Save the results to the dictionary
+        res_info['url'] = self.url
+        res_info['id'] = 'artifact'
+        res_info['name'] = 'artifact'
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+
+        selector = Selector(text=content)
+
+        artifact_list = selector.xpath('//a[@class="relic-describe"]')
+
+        img_dir = os.path.join(self.img_path, 'artifact')
+        os.makedirs(img_dir, exist_ok=True)
+        html_dir = os.path.join(self.html_path, 'artifact')
+        os.makedirs(html_dir, exist_ok=True)
+
+        tasks = []
+        artifacts_info = []
+        for idx, artifact in enumerate(artifact_list):
+            href = artifact.xpath('./@href').extract_first()
+            id = href.split('/')[4]
+
+            href = add_url(href)
+
+            icon = artifact.xpath(
+                './/div[@class="relic-describe__top--image"]/img/@data-src'
+            ).extract_first()
+
+            name = (
+                artifact.xpath('.//div[@class="relic-describe__top--title"]/text()')
+                .get()
+                .strip()
+            )
+
+            artifact_parser = ArtifactParser(
+                config=self.config,
+                url=href,
+                id=id,
+                name=name,
+                icon=icon,
+                img_path=img_dir,
+                html_path=html_dir,
+            )
+
+            tasks.append(artifact_parser.parse(browser_context))
+
+            # If batch size is reached, execute the tasks
+            if len(tasks) == self.config.batch_size:
+                artifacts_info.extend(await self._run_batch(tasks))
+                tasks = []
+
+        if tasks:
+            artifacts_info.extend(await self._run_batch(tasks))
+
+        res_info['data'].update({item['name']: item for item in artifacts_info})
+
+        return res_info
+
+    async def _parse_achievement(
+        self, context_page: Page, browser_context: BrowserContext
+    ) -> Dict[str, Any]:
+        res_info: Dict[str, Any] = dict()
+
+        url = 'https://bbs.mihoyo.com/ys/obc/channel/map/189/252?bbs_presentation_style=no_header&visit_device=pc'
+
+        # Open the page
+        await context_page.goto(url)
+
+        # Ensure all network activity is complete
+        await context_page.wait_for_load_state('networkidle')
+
+        # start parsing
+        logger.info('| Start parsing achievement...')
+        save_name = f'{self.save_id:04d}_full'
+        self.save_id += 1
+
+        # Save a screenshot of the page
+        content, img_path, html_path = await self._save_screenshot(
+            context_page=context_page,
+            save_name=save_name,
+            browser_context=browser_context,
+            save_screen=self.save_screen,
+        )
+
+        # Save the results to the dictionary
+        res_info['url'] = self.url
+        res_info['id'] = 'achievement'
+        res_info['name'] = 'achievement'
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+
+        selector = Selector(text=content)
+
+        achievement_list = selector.xpath(
+            '//ul[@class="position-list__list position-list__list--default"]'
+        ).xpath('.//li')
+
+        img_dir = os.path.join(self.img_path, 'achievement')
+        os.makedirs(img_dir, exist_ok=True)
+        html_dir = os.path.join(self.html_path, 'achievement')
+        os.makedirs(html_dir, exist_ok=True)
+
+        tasks = []
+        achievements_info = []
+        for idx, achievement in enumerate(achievement_list):
+            achievement = achievement.xpath('.//a')
+            href = achievement.xpath('./@href').extract_first()
+            id = href.split('/')[4]
+
+            href = add_url(href)
+
+            icon = achievement.xpath('.//img/@data-src').extract_first()
+
+            name = achievement.xpath('.//a/@title').extract_first()
+
+            achievement_parser = AchievementParser(
+                config=self.config,
+                url=href,
+                id=id,
+                name=name,
+                icon=icon,
+                img_path=img_dir,
+                html_path=html_dir,
+            )
+
+            tasks.append(achievement_parser.parse(browser_context))
+
+            # If batch size is reached, execute the tasks
+            if len(tasks) == self.config.batch_size:
+                achievements_info.extend(await self._run_batch(tasks))
+                tasks = []
+
+        if tasks:
+            achievements_info.extend(await self._run_batch(tasks))
+
+        res_info['data'].update({item['name']: item for item in achievements_info})
 
         return res_info
 
@@ -251,4 +394,26 @@ class IllustrationParser(AbstractParser):
         """
         Run a batch of tasks and handle any potential errors.
         """
-        await asyncio.gather(*tasks)
+        return await asyncio.gather(*tasks)
+
+    async def _parse(
+        self,
+        context_page: Optional[Page] = None,
+        browser_context: Optional[BrowserContext] = None,
+    ) -> Dict[str, Any]:
+        """
+        :param page:
+        :return: res_info: Dict[str, Any]
+        """
+
+        res_info: Dict[str, Any] = dict()
+
+        res_info['角色'] = await self._parse_character(context_page, browser_context)
+
+        res_info['武器'] = await self._parse_weapon(context_page, browser_context)
+
+        res_info['圣遗物'] = await self._parse_artifact(context_page, browser_context)
+
+        res_info['成就'] = await self._parse_achievement(context_page, browser_context)
+
+        return res_info

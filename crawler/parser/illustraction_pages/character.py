@@ -1,5 +1,4 @@
 import asyncio
-import os
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
@@ -8,7 +7,7 @@ from scrapy.selector import Selector
 
 from crawler.base import AbstractParser
 from crawler.logger import logger
-from crawler.utils.element import save_element, save_element_overleaf
+from crawler.utils.element import save_element_overleaf
 from crawler.utils.html_files import save_html_file
 from crawler.utils.url import add_url
 
@@ -48,70 +47,21 @@ class CharacterParser(AbstractParser):
         *args,
         config,
         url: str,
-        page_name: str,
-        character_name: str,
-        icon: str,
         img_path: str,
         html_path: str,
+        id: str = 'character',
+        name: str = 'character',
         **kwargs,
     ) -> None:
-        self.config = config
-        self.url = url
-        self.page_name = page_name
-        self.character_name = character_name
-        self.icon = icon
-
-        self.img_path = img_path
-        self.html_path = html_path
-
-        self.save_id = 1
-
-    async def parse(
-        self,
-        browser_context: Optional[BrowserContext] = None,
-    ) -> Dict[str, Any]:
-        """
-        parse page
-        :param context_page:
-        :return:
-        """
-        # New a context page
-        context_page = await browser_context.new_page()
-
-        logger.info(f'| Go to the page {self.url}')
-        # Open the page
-        await context_page.goto(self.url)
-
-        # Ensure all network activity is complete
-        await context_page.wait_for_load_state('networkidle')
-        await asyncio.sleep(1)
-
-        logger.info('| Start parsing page...')
-
-        self.img_path = os.path.join(self.img_path, self.page_name)
-        os.makedirs(self.img_path, exist_ok=True)
-        self.html_path = os.path.join(self.html_path, self.page_name)
-        os.makedirs(self.html_path, exist_ok=True)
-
-        # Save a screenshot of the page
-        # await self._save_screenshot(
-        #     context_page,
-        #     browser_context,
-        #     sleep_time=2,
-        #     remove_header=True,
-        #     remove_footer=True,
-        #     viewport_height_adjustment=-70,
-        # )  # TODO: Comment it out for now, as this method causes the page to scroll, which slows down the speed.
-
-        # Parse the page
-        res_info = await self._parse(context_page, browser_context)
-
-        logger.info('| Finish parsing page...')
-
-        # Close the context page
-        await context_page.close()
-
-        return res_info
+        # Initialize the parent class
+        super().__init__(
+            config=config,
+            url=url,
+            id=id,
+            name=name,
+            img_path=img_path,
+            html_path=html_path,
+        )
 
     async def _parse_base_info(
         self, context_page: Page, browser_context: BrowserContext
@@ -125,26 +75,25 @@ class CharacterParser(AbstractParser):
         # Locate the matching element
         element = context_page.locator('div.obc-tmp-character__pc').first  # type: ignore
 
-        content, img_path, html_path = await save_element(
+        content, img_path, html_path = await save_element_overleaf(
+            page=context_page,
             element=element,
             save_name=save_name,
             img_path=self.img_path,
             html_path=self.html_path,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
         )
 
         # Save the results to the dictionary
-        res_info['element_img_path'] = img_path
-        res_info['element_html_path'] = html_path
-        logger.info('| Finish parsing page - 基础信息 - element...')
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()  # type: ignore
 
         # Convert the element to scrapy selector
         element = Selector(text=content)
 
-        logger.info('| Start parsing page - 基础信息 - sub elements...')
-        # Start get sub elements
-        res_info['element_data']: List[Dict[str, Any]] = []  # type: ignore
-
-        item: Dict[str, Any] = dict()  # type: ignore
+        item_info: Dict[str, Any] = dict()  # type: ignore
 
         character_background_img = element.css('img.bg::attr(src)').get()
         character_element_property_base64 = element.css(
@@ -153,10 +102,10 @@ class CharacterParser(AbstractParser):
         character_name = element.css('p.obc-tmp-character__box--title::text').get()
         character_stars = len(element.css('i.obc-tmpl__rate-icon'))
 
-        item['背景图片'] = character_background_img
-        item['元素属性'] = character_element_property_base64
-        item['名字'] = character_name
-        item['星级'] = character_stars
+        item_info['背景图片'] = character_background_img
+        item_info['元素属性'] = character_element_property_base64
+        item_info['名字'] = character_name
+        item_info['星级'] = character_stars
 
         character_property_list = element.css(
             'div.obc-tmp-character__property div.obc-tmp-character__list'
@@ -173,11 +122,11 @@ class CharacterParser(AbstractParser):
                     .get()
                     .strip()
                 )
-                item[key] = value
+                item_info[key] = value
 
-        res_info['element_data'].append(item)
+        res_info['data']['基础信息'] = item_info
 
-        logger.info('| Finish parsing page - 基础信息 - sub elements...')
+        logger.info('| Finish parsing page - 基础信息 - element...')
 
         return res_info
 
@@ -199,18 +148,14 @@ class CharacterParser(AbstractParser):
             save_name=save_name,
             img_path=self.img_path,
             html_path=self.html_path,
-            set_width_scale=1.0,
-            set_height_scale=3.0,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
         )
 
         # Save the results to the dictionary
-        res_info['element_img_path'] = img_path
-        res_info['element_html_path'] = html_path
-        logger.info('| Finish parsing page - 角色突破 - element...')
-
-        logger.info('| Start parsing page - 角色突破 - sub elements...')
-        # Start get sub elements
-        res_info['element_data']: List[Dict[str, Any]] = []  # type: ignore
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()
 
         slides = (
             await element.locator('div.mhy-swiper')
@@ -222,11 +167,11 @@ class CharacterParser(AbstractParser):
         )
 
         for idx, (slide, slide_data) in enumerate(zip(slides, slides_data)):
-            item: Dict[str, Any] = dict()
+            item_info: Dict[str, Any] = dict()
 
             role_ascension_level = await slide.text_content()
             role_ascension_level = role_ascension_level.strip().replace('/', '')
-            item['突破等级'] = role_ascension_level
+            item_info['突破等级'] = role_ascension_level
 
             save_name = f'{self.save_id:04d}_角色突破_{role_ascension_level}'
             self.save_id += 1
@@ -239,22 +184,22 @@ class CharacterParser(AbstractParser):
             ).first
 
             # Capture a screenshot of the element
-            _, img_path, html_path = await save_element_overleaf(
+            content, img_path, html_path = await save_element_overleaf(
                 page=context_page,
                 element=element,
                 save_name=save_name,
                 img_path=self.img_path,
                 html_path=self.html_path,
-                set_width_scale=1.0,
-                set_height_scale=3.0,
+                set_width_scale=self.config.set_width_scale,
+                set_height_scale=self.config.set_height_scale,
             )
 
             content = await slide_data.inner_html()
 
             # Overwrite the HTML content to a file
             save_html_file(content, html_path)
-            item['img_path'] = img_path
-            item['html_path'] = html_path
+            item_info['img_path'] = img_path
+            item_info['html_path'] = html_path
 
             selector = Selector(text=content)
 
@@ -280,7 +225,7 @@ class CharacterParser(AbstractParser):
                 materials.append(
                     {'name': name, 'amount': amount, 'url': url, 'icon_url': icon_url}
                 )
-            item['突破材料'] = materials
+            item_info['突破材料'] = materials
 
             # Get the ascension attributes
             attributes = {}
@@ -309,11 +254,12 @@ class CharacterParser(AbstractParser):
 
                 attributes[key1] = value1
                 attributes[key2] = value2
-            item['属性信息'] = attributes
 
-            res_info['element_data'].append(item)
+            item_info['属性信息'] = attributes
 
-        logger.info('| Finish parsing page - 角色突破 - sub elements...')
+            res_info['data'][role_ascension_level] = item_info
+
+        logger.info('| Finish parsing page - 角色突破 - element...')
 
         return res_info
 
@@ -335,18 +281,14 @@ class CharacterParser(AbstractParser):
             save_name=save_name,
             img_path=self.img_path,
             html_path=self.html_path,
-            set_width_scale=1.0,
-            set_height_scale=3.0,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
         )
 
         # Save the results to the dictionary
-        res_info['element_img_path'] = img_path
-        res_info['element_html_path'] = html_path
-        logger.info('| Finish parsing page - 推荐装备 - element...')
-
-        logger.info('| Start parsing page - 推荐装备 - sub elements...')
-        # Start get sub elements
-        res_info['element_data']: List[Dict[str, Any]] = []
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()  # type: ignore
 
         slides = (
             await element.locator('div.mhy-swiper')
@@ -361,7 +303,7 @@ class CharacterParser(AbstractParser):
         slide = slides[0]
         slide_data = slides_data[0]
 
-        item: Dict[str, Any] = dict()
+        item_info: Dict[str, Any] = dict()
 
         await slide.click()
         await asyncio.sleep(1)
@@ -370,60 +312,54 @@ class CharacterParser(AbstractParser):
 
         element = context_page.locator('div.obc-tmpl-part.obc-tmpl-recommend').first
 
-        _, img_path, html_path = await save_element_overleaf(
+        content, img_path, html_path = await save_element_overleaf(
             page=context_page,
             element=element,
             save_name=save_name,
             img_path=self.img_path,
             html_path=self.html_path,
-            set_width_scale=1.0,
-            set_height_scale=3.0,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
         )
 
         content = await slide_data.inner_html()
 
         save_html_file(content, html_path)
 
-        item['img_path'] = img_path
-        item['html_path'] = html_path
+        item_info['img_path'] = img_path
+        item_info['html_path'] = html_path
 
         selector = Selector(text=content)
 
-        weapon_list = []
-        weapon_items = selector.xpath('//tr')
-
-        for weapon_item in weapon_items[1:]:
-            weapon_name = weapon_item.xpath(
+        weapon_list = selector.xpath('//tr')
+        for weapon in weapon_list[1:]:
+            weapon_name = weapon.xpath(
                 './td[1]//span[@class="custom-entry-wrapper"]/@data-entry-name'
             ).get()
             weapon_url = add_url(
-                weapon_item.xpath(
+                weapon.xpath(
                     './td[1]//span[@class="custom-entry-wrapper"]/@data-entry-link'
                 ).get()
             )
-            weapon_icon_url = weapon_item.xpath(
+            weapon_icon_url = weapon.xpath(
                 './td[1]//span[@class="custom-entry-wrapper"]/@data-entry-img'
             ).get()
-            weapon_reason = weapon_item.xpath('./td[2]//text()').get().strip()
+            weapon_reason = weapon.xpath('./td[2]//text()').get().strip()
 
-            weapon_list.append(
-                {
-                    '推荐武器': weapon_name,
-                    'url': weapon_url,
-                    'icon_url': weapon_icon_url,
-                    '推荐理由': weapon_reason,
-                }
-            )
+            item_info[weapon_name] = {
+                'name': weapon_name,
+                'url': weapon_url,
+                'icon_url': weapon_icon_url,
+                'reason': weapon_reason,
+            }
 
-        item['武器推荐'] = weapon_list
-
-        res_info['element_data'].append(item)
+        res_info['data']['武器推荐'] = item_info
 
         # 圣遗物推荐
         slide = slides[1]
         slide_data = slides_data[1]
 
-        item: Dict[str, Any] = dict()
+        item_info: Dict[str, Any] = dict()
 
         await slide.click()
         await asyncio.sleep(1)
@@ -432,55 +368,51 @@ class CharacterParser(AbstractParser):
 
         element = context_page.locator('div.obc-tmpl-part.obc-tmpl-recommend').first
 
-        _, img_path, html_path = await save_element_overleaf(
+        content, img_path, html_path = await save_element_overleaf(
             page=context_page,
             element=element,
             save_name=save_name,
             img_path=self.img_path,
             html_path=self.html_path,
-            set_width_scale=1.0,
-            set_height_scale=3.0,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
         )
 
         content = await slide_data.inner_html()
 
         save_html_file(content, html_path)
 
-        item['img_path'] = img_path
-        item['html_path'] = html_path
+        item_info['img_path'] = img_path
+        item_info['html_path'] = html_path
 
         selector = Selector(text=content)
 
-        artifact_list = []
-        artifact_items = selector.xpath('//tr')
+        artifact_list = selector.xpath('//tr')
 
-        for artifact_item in artifact_items[1:]:
-            artifact_name = artifact_item.xpath(
+        for artifact in artifact_list[1:]:
+            artifact_name = artifact.xpath(
                 './td[1]//span[@class="custom-entry-wrapper"]/@data-entry-name'
             ).get()
             artifact_url = add_url(
-                artifact_item.xpath(
+                artifact.xpath(
                     './td[1]//span[@class="custom-entry-wrapper"]/@data-entry-link'
                 ).get()
             )
-            artifact_icon_url = artifact_item.xpath(
+            artifact_icon_url = artifact.xpath(
                 './td[1]//span[@class="custom-entry-wrapper"]/@data-entry-img'
             ).get()
-            artifact_reason = artifact_item.xpath('./td[2]//text()').get().strip()
+            artifact_reason = artifact.xpath('./td[2]//text()').get().strip()
 
-            artifact_list.append(
-                {
-                    '推荐圣遗物': artifact_name,
-                    'url': artifact_url,
-                    'icon_url': artifact_icon_url,
-                    '推荐理由': artifact_reason,
-                }
-            )
+            item_info[artifact_name] = {
+                'name': artifact_name,
+                'url': artifact_url,
+                'icon_url': artifact_icon_url,
+                'reason': artifact_reason,
+            }
 
-        item['圣遗物推荐'] = artifact_list
-        res_info['element_data'].append(item)
+        res_info['data']['圣遗物推荐'] = item_info
 
-        logger.info('| Finish parsing page - 推荐装备 - sub elements...')
+        logger.info('| Finish parsing page - 推荐装备 - element...')
 
         return res_info
 
@@ -504,26 +436,34 @@ class CharacterParser(AbstractParser):
             save_name=save_name,
             img_path=self.img_path,
             html_path=self.html_path,
-            set_width_scale=1.0,
-            set_height_scale=3.0,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
         )
 
         # Save the results to the dictionary
-        res_info['element_img_path'] = img_path
-        res_info['element_html_path'] = html_path
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()  # type: ignore
 
-        logger.info('| Finish parsing page - 推荐攻略 - element...')
+        item_info: Dict[str, Any] = dict()
 
-        logger.info('| Start parsing page - 推荐攻略 - sub elements...')
+        content, img_path, html_path = await save_element_overleaf(
+            page=context_page,
+            element=element,
+            save_name=save_name,
+            img_path=self.img_path,
+            html_path=self.html_path,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
+        )
 
-        res_info['element_data']: List[Dict[str, Any]] = []
+        item_info['img_path'] = img_path
+        item_info['html_path'] = html_path
 
         selector = Selector(text=content)
 
         strategy_list = selector.xpath('//div[@class="obc-tmpl-strategy__card"]')
         for strategy in strategy_list:
-            item: Dict[str, Any] = dict()
-
             strategy_url = add_url(strategy.xpath('./a/@href').get())
             strategy_image_url = strategy.xpath(
                 './a/div[@class="wiki-consumer-better-image"]/picture/source/@srcset'
@@ -534,12 +474,15 @@ class CharacterParser(AbstractParser):
                 .strip()
             )
 
-            item['url'] = strategy_url
-            item['image_url'] = strategy_image_url
-            item['title'] = strategy_title
+            item_info[strategy_title] = {
+                'title': strategy_title,
+                'url': strategy_url,
+                'image_url': strategy_image_url,
+            }
 
-            res_info['element_data'].append(item)
+        res_info['data']['推荐攻略'] = item_info
 
+        logger.info('| Finish parsing page - 推荐攻略 - element...')
         return res_info
 
     async def _parse_talent_info(
@@ -560,19 +503,14 @@ class CharacterParser(AbstractParser):
             save_name=save_name,
             img_path=self.img_path,
             html_path=self.html_path,
-            set_width_scale=3.0,
-            set_height_scale=3.0,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
         )
 
         # Save the results to the dictionary
-        res_info['element_img_path'] = img_path
-        res_info['element_html_path'] = html_path
-
-        logger.info('| Finish parsing page - 天赋 - element...')
-
-        logger.info('| Start parsing page - 天赋 - sub elements...')
-
-        res_info['element_data']: List[Dict[str, Any]] = []
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()
 
         slides = (
             await element.locator('div.mhy-swiper')
@@ -584,11 +522,11 @@ class CharacterParser(AbstractParser):
         )
 
         for idx, (slide, slide_data) in enumerate(zip(slides, slides_data)):
-            item: Dict[str, Any] = dict()
+            item_info: Dict[str, Any] = dict()
 
             talent_level = await slide.text_content()
             talent_level = talent_level.strip().replace('/', '')
-            item['天赋等级'] = talent_level
+            item_info['天赋等级'] = talent_level
 
             save_name = f'{self.save_id:04d}_天赋_{talent_level}'
             self.save_id += 1
@@ -600,21 +538,22 @@ class CharacterParser(AbstractParser):
                 'div.obc-tmpl-part.obc-tmpl-roleTalent'
             ).first
 
-            _, img_path, html_path = await save_element_overleaf(
+            content, img_path, html_path = await save_element_overleaf(
                 page=context_page,
                 element=element,
                 save_name=save_name,
                 img_path=self.img_path,
                 html_path=self.html_path,
-                set_width_scale=3.0,
-                set_height_scale=3.0,
+                set_width_scale=self.config.set_width_scale,
+                set_height_scale=self.config.set_height_scale,
             )
 
             content = await slide_data.inner_html()
 
             save_html_file(content, html_path)
-            item['img_path'] = img_path
-            item['html_path'] = html_path
+
+            item_info['img_path'] = img_path
+            item_info['html_path'] = html_path
 
             selector = Selector(text=content)
 
@@ -634,7 +573,7 @@ class CharacterParser(AbstractParser):
                 .strip()
             )
 
-            item['攻击天赋'] = {
+            item_info['攻击天赋'] = {
                 'icon_url': attack_talent_icon_url,
                 'name': attack_talent_name,
                 'description': attack_talent_description,
@@ -651,11 +590,11 @@ class CharacterParser(AbstractParser):
 
             if len(levels) == 1:
                 details = tbody.xpath('.//p').xpath('string(.)').get().strip()
-                item['详细属性'] = details
+                item_info['详细属性'] = details
             else:
                 details = tbody.xpath('./tr')
 
-                item['详细属性'] = []
+                item_info['详细属性'] = []
                 for idx, detail in enumerate(details[:-1]):
                     tds = detail.xpath('./td')
 
@@ -668,7 +607,7 @@ class CharacterParser(AbstractParser):
                         td.strip() for td in td_values[: len(levels)]
                     ]  # 有些天赋等级没有对应的属性
 
-                    item['详细属性'].append(
+                    item_info['详细属性'].append(
                         {
                             'name': td_name,
                             'values': {
@@ -722,12 +661,14 @@ class CharacterParser(AbstractParser):
                     level: material
                     for level, material in zip(levels[1:], materials_list)
                 }
-                item['升级材料'] = {
+                item_info['升级材料'] = {
                     'name': td_name,
                     'values': materials_dict,
                 }
 
-            res_info['element_data'].append(item)
+            res_info['data'][talent_level] = item_info
+
+        logger.info('| Finish parsing page - 天赋 - element...')
 
         return res_info
 
@@ -749,27 +690,21 @@ class CharacterParser(AbstractParser):
             save_name=save_name,
             img_path=self.img_path,
             html_path=self.html_path,
-            set_width_scale=1.0,
-            set_height_scale=3.0,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
         )
 
         # Save the results to the dictionary
-        res_info['element_img_path'] = img_path
-        res_info['element_html_path'] = html_path
-
-        logger.info('| Finish parsing page - 命之座 - element...')
-
-        logger.info('| Start parsing page - 命之座 - sub elements...')
-
-        res_info['element_data']: List[Dict[str, Any]] = []
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()  # type: ignore
 
         xbox = Selector(text=content)
-
         tbody = xbox.xpath('.//tbody')
 
-        for idx, tr in enumerate(tbody.xpath('.//tr')):
-            item: Dict[str, Any] = dict()
+        item_info: Dict[str, Any] = dict()
 
+        for idx, tr in enumerate(tbody.xpath('.//tr')):
             icon_url = tr.xpath(
                 './/td[1]//span[@class="custom-image-view"]/@data-image-url'
             ).get()
@@ -778,13 +713,15 @@ class CharacterParser(AbstractParser):
                 tr.xpath('.//td[2]//p').xpath('string(.)').getall()
             ).strip()
 
-            item['icon_url'] = icon_url
-            item['name'] = name
-            item['description'] = description
+            item_info[name] = {
+                'icon_url': icon_url,
+                'name': name,
+                'description': description,
+            }
 
-            res_info['element_data'].append(item)
+        res_info['data']['命之座'] = item_info
 
-        logger.info('| Finish parsing page - 命之座 - sub elements...')
+        logger.info('| Finish parsing page - 命之座 - element...')
 
         return res_info
 
@@ -812,19 +749,19 @@ class CharacterParser(AbstractParser):
             save_name=save_name,
             img_path=self.img_path,
             html_path=self.html_path,
-            set_width_scale=1.0,
-            set_height_scale=3.0,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
         )
 
-        res_element_1_info['element_img_path'] = img_path
-        res_element_1_info['element_html_path'] = html_path
-        res_element_1_info['element_data']: List[Dict[str, Any]] = []
+        res_element_1_info['img_path'] = img_path
+        res_element_1_info['html_path'] = html_path
+        res_element_1_info['data']: Dict[str, Any] = dict()
 
         selector = Selector(text=content)
 
-        item: Dict[str, Any] = dict()
-        item['角色展示'] = selector.xpath('.//source/@srcset').get()
-        res_element_1_info['element_data'].append(item)
+        item_info: Dict[str, Any] = dict()
+        item_info['角色展示'] = selector.xpath('.//source/@srcset').get()
+        res_element_1_info['data'] = item_info
 
         # parse element 2
         res_element_2_info: Dict[str, Any] = dict()
@@ -840,13 +777,13 @@ class CharacterParser(AbstractParser):
             save_name=save_name,
             img_path=self.img_path,
             html_path=self.html_path,
-            set_width_scale=1.0,
-            set_height_scale=3.0,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
         )
 
-        res_element_2_info['element_img_path'] = img_path
-        res_element_2_info['element_html_path'] = html_path
-        res_element_2_info['element_data']: List[Dict[str, Any]] = []
+        res_element_2_info['img_path'] = img_path
+        res_element_2_info['html_path'] = html_path
+        res_element_2_info['data']: Dict[str, Any] = dict()  # type: ignore
 
         slides = (
             await element.locator('div.mhy-swiper')
@@ -858,7 +795,7 @@ class CharacterParser(AbstractParser):
         )
 
         for idx, (slide, slide_data) in enumerate(zip(slides, slides_data)):
-            item: Dict[str, Any] = dict()
+            item_info: Dict[str, Any] = dict()
 
             await slide.click()
             await asyncio.sleep(1)
@@ -877,20 +814,21 @@ class CharacterParser(AbstractParser):
                 save_name=save_name,
                 img_path=self.img_path,
                 html_path=self.html_path,
-                set_width_scale=1.0,
-                set_height_scale=3.0,
+                set_width_scale=self.config.set_width_scale,
+                set_height_scale=self.config.set_height_scale,
             )
 
             save_html_file(content, html_path)
 
-            item['img_path'] = img_path
-            item['html_path'] = html_path
-            item['name'] = await slide.text_content()
-            item['image_url'] = await slide_data.locator('source').first.get_attribute(
-                'srcset'
-            )
+            item_info['img_path'] = img_path
+            item_info['html_path'] = html_path
+            name = await slide.text_content()
+            image_url = await slide_data.locator('source').first.get_attribute('srcset')
 
-            res_element_2_info['element_data'].append(item)
+            item_info['name'] = name
+            item_info['image_url'] = image_url
+
+            res_element_2_info['data'][name] = item_info
 
         # parse element 3
         res_element_3_info: Dict[str, Any] = dict()
@@ -906,12 +844,13 @@ class CharacterParser(AbstractParser):
             save_name=save_name,
             img_path=self.img_path,
             html_path=self.html_path,
-            set_width_scale=1.0,
-            set_height_scale=3.0,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
         )
 
-        res_element_3_info['element_img_path'] = img_path
-        res_element_3_info['element_html_path'] = html_path
+        res_element_3_info['img_path'] = img_path
+        res_element_3_info['html_path'] = html_path
+        res_element_3_info['data']: Dict[str, Any] = dict()  # type: ignore
 
         slides = (
             await element.locator('div.mhy-swiper')
@@ -922,10 +861,8 @@ class CharacterParser(AbstractParser):
             await element.locator('div.mhy-swiper').locator('div.swiper-slide').all()
         )
 
-        res_element_3_info['element_data']: List[Dict[str, Any]] = []
-
         for idx, (slide, slide_data) in enumerate(zip(slides, slides_data)):
-            item: Dict[str, Any] = dict()
+            item_info: Dict[str, Any] = dict()
 
             await slide.click()
             await asyncio.sleep(1)
@@ -944,20 +881,22 @@ class CharacterParser(AbstractParser):
                 save_name=save_name,
                 img_path=self.img_path,
                 html_path=self.html_path,
-                set_width_scale=1.0,
-                set_height_scale=3.0,
+                set_width_scale=self.config.set_width_scale,
+                set_height_scale=self.config.set_height_scale,
             )
 
             save_html_file(content, html_path)
 
-            item['img_path'] = img_path
-            item['html_path'] = html_path
-            item['name'] = await slide.text_content()
-            item['image_url'] = await slide_data.locator('source').first.get_attribute(
-                'srcset'
-            )
+            item_info['img_path'] = img_path
+            item_info['html_path'] = html_path
 
-            res_element_3_info['element_data'].append(item)
+            name = await slide.text_content()
+            image_url = await slide_data.locator('source').first.get_attribute('srcset')
+
+            item_info['name'] = name
+            item_info['image_url'] = image_url
+
+            res_element_3_info['data'][name] = item_info
 
         logger.info('| Finish parsing page - 角色展示 - element...')
 
@@ -985,28 +924,24 @@ class CharacterParser(AbstractParser):
             save_name=save_name,
             img_path=self.img_path,
             html_path=self.html_path,
-            set_width_scale=1.0,
-            set_height_scale=3.0,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
         )
 
         # Save the results to the dictionary
-        res_info['element_img_path'] = img_path
-        res_info['element_html_path'] = html_path
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()  # type: ignore
 
-        logger.info('| Finish parsing page - 名片 - element...')
-
-        logger.info('| Start parsing page - 名片 - sub elements...')
-
-        res_info['element_data']: List[Dict[str, Any]] = []
         selector = Selector(text=content)
 
-        item: Dict[str, Any] = dict()
+        item_info: Dict[str, Any] = dict()
 
-        item['image_url'] = selector.xpath('.//source/@srcset').get()
+        item_info['image_url'] = selector.xpath('.//source/@srcset').get()
 
-        res_info['element_data'].append(item)
+        res_info['data']['名片'] = item_info
 
-        logger.info('| Finish parsing page - 名片 - sub elements...')
+        logger.info('| Finish parsing page - 名片 - element...')
 
         return res_info
 
@@ -1037,31 +972,26 @@ class CharacterParser(AbstractParser):
             save_name=save_name,
             img_path=self.img_path,
             html_path=self.html_path,
-            set_width_scale=1.0,
-            set_height_scale=3.0,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
         )
 
-        res_info['element_img_path'] = img_path
-        res_info['element_html_path'] = html_path
-
-        logger.info('| Finish parsing page - 特殊料理 - element...')
-
-        logger.info('| Start parsing page - 特殊料理 - sub elements...')
-
-        res_info['element_data']: List[Dict[str, Any]] = []
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()  # type: ignore
 
         selector = Selector(text=content)
 
-        item: Dict[str, Any] = dict()
+        item_info: Dict[str, Any] = dict()
 
-        item['icon_url'] = selector.xpath('.//source/@srcset').get()
-        item['name'] = selector.xpath('.//p[1]//a/text()').get().strip()
-        item['url'] = selector.xpath('.//p[1]//a/@href').get().strip()
-        item['description'] = selector.xpath('.//p[2]//text()').get().strip()
+        item_info['icon_url'] = selector.xpath('.//source/@srcset').get()
+        item_info['name'] = selector.xpath('.//p[1]//a/text()').get().strip()
+        item_info['url'] = selector.xpath('.//p[1]//a/@href').get().strip()
+        item_info['description'] = selector.xpath('.//p[2]//text()').get().strip()
 
-        res_info['element_data'].append(item)
+        res_info['data']['特殊料理'] = item_info
 
-        logger.info('| Finish parsing page - 特殊料理 - sub elements...')
+        logger.info('| Finish parsing page - 特殊料理 - element...')
 
         return res_info
 
@@ -1093,34 +1023,28 @@ class CharacterParser(AbstractParser):
             save_name=save_name,
             img_path=self.img_path,
             html_path=self.html_path,
-            set_width_scale=1.0,
-            set_height_scale=3.0,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
         )
 
-        res_info['element_img_path'] = img_path
-        res_info['element_html_path'] = html_path
-
-        logger.info('| Finish parsing page - 角色CV - element...')
-
-        logger.info('| Start parsing page - 角色CV - sub elements...')
-
-        res_info['element_data']: List[Dict[str, Any]] = []
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()
 
         selector = Selector(text=content)
 
+        item_info: Dict[str, Any] = dict()
+
         cv_info = selector.xpath('//div[@class="obc-tmpl__paragraph-box  "]//table//tr')
         for cv in cv_info:
-            item: Dict[str, Any] = dict()
-
-            cv_type = cv.xpath('./td[1]//text()').get().strip()
+            cv_type = cv.xpath('./td[1]//text()').get().strip().replace('：', '')
             cv_name = cv.xpath('./td[2]//text()').get().strip()
 
-            item['CV语言'] = cv_type.replace('：', '')
-            item['CV名字'] = cv_name
+            item_info[cv_type] = cv_name
 
-            res_info['element_data'].append(item)
+        res_info['data']['角色CV'] = item_info
 
-        logger.info('| Finish parsing page - 角色CV - sub elements...')
+        logger.info('| Finish parsing page - 角色CV - element...')
 
         return res_info
 
@@ -1139,7 +1063,6 @@ class CharacterParser(AbstractParser):
             title = await element.locator(
                 'div.obc-tmpl-fold__title'
             ).first.text_content()
-            logger.info(title)
 
             button = None
             if (
@@ -1169,19 +1092,19 @@ class CharacterParser(AbstractParser):
                 )
 
                 res_info[title]: Dict[str, Any] = dict()
-                res_info[title]['element_img_path'] = img_path
-                res_info[title]['element_html_path'] = html_path
+                res_info[title]['img_path'] = img_path
+                res_info[title]['html_path'] = html_path
+                res_info[title]['data']: Dict[str, Any] = dict()
 
                 selector = Selector(text=content)
 
-                res_info[title]['element_data']: List[Dict[str, Any]] = []
+                item_info: Dict[str, Any] = dict()
 
-                item: Dict[str, Any] = dict()
-
-                item['description'] = ''.join(
+                item_info['description'] = ''.join(
                     selector.xpath('.//p').xpath('string(.)').getall()
                 ).strip()
-                res_info[title]['element_data'].append(item)
+
+                res_info[title]['data']['内容'] = item_info
 
         logger.info('| Finish parsing page - 角色扩展 - element...')
         return res_info
@@ -1209,14 +1132,9 @@ class CharacterParser(AbstractParser):
         )
 
         # Save the results to the dictionary
-        res_info['element_img_path'] = img_path
-        res_info['element_html_path'] = html_path
-
-        logger.info('| Finish parsing page - 配音展示 - element...')
-
-        logger.info('| Start parsing page - 配音展示 - sub elements...')
-
-        res_info['element_data']: List[Dict[str, Any]] = []
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()  # type: ignore
 
         slides = (
             await element.locator('div.mhy-swiper')
@@ -1243,7 +1161,7 @@ class CharacterParser(AbstractParser):
         #         logger.info(f'| {url} {name} {language} {content} {lan_idx} {but_idx}')
 
         for lan_idx, (slide, slide_data) in enumerate(zip(slides, slides_data)):
-            item: Dict[str, Any] = dict()
+            item_info: Dict[str, Any] = dict()
 
             language = await slide.text_content()
 
@@ -1260,7 +1178,6 @@ class CharacterParser(AbstractParser):
 
             trs = selector.xpath('.//tr')
 
-            voice_list = []
             for but_idx, (tr, button) in enumerate(zip(trs, buttons)):
                 voice_name = tr.xpath('./td[1]//text()').get().strip()
                 voice_content = ''.join(
@@ -1281,19 +1198,11 @@ class CharacterParser(AbstractParser):
                 # await button.scroll_into_view_if_needed()
                 # await button.click(force=True)
 
-                voice_list.append(
-                    {
-                        'name': voice_name,
-                        'content': voice_content,
-                    }
-                )
+                item_info[str(but_idx)] = {'name': voice_name, 'content': voice_content}
 
-            item['语言'] = language
-            item['语音内容'] = voice_list
+            res_info['data'][language] = item_info
 
-            res_info['element_data'].append(item)
-
-        logger.info('| Finish parsing page - 配音展示 - sub elements...')
+        logger.info('| Finish parsing page - 配音展示 - element...')
         return res_info
 
     async def _parse_correlation_voice_info(
@@ -1328,23 +1237,18 @@ class CharacterParser(AbstractParser):
             set_height_scale=3.0,
         )
 
-        res_info['element_img_path'] = img_path
-        res_info['element_html_path'] = html_path
-
-        logger.info('| Finish parsing page - 角色关联语音 - element...')
-
-        logger.info('| Start parsing page - 角色关联语音 - sub elements...')
-
-        res_info['element_data']: List[Dict[str, Any]] = []
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()
 
         selector = Selector(text=content)
 
         tbody = selector.xpath('.//tbody')
         correlation_characters = tbody.xpath('.//tr')
 
-        for character in correlation_characters[1:]:  # skip the first one
-            item: Dict[str, Any] = dict()
+        item_info: Dict[str, Any] = dict()
 
+        for character in correlation_characters[1:]:  # skip the first one
             character_info = character.xpath(
                 './td[1]//span[@class="custom-entry-wrapper"]'
             )
@@ -1358,14 +1262,16 @@ class CharacterParser(AbstractParser):
                 character.xpath('./td[2]//p').xpath('string(.)').getall()
             ).strip()
 
-            item['关联角色名字'] = character_name
-            item['url'] = character_url
-            item['icon_url'] = character_icon_url
-            item['语音内容'] = voice_content
+            item_info[character_name] = {
+                'url': character_url,
+                'icon_url': character_icon_url,
+                'content': voice_content,
+                'name': character_name,
+            }
 
-            res_info['element_data'].append(item)
+        res_info['data'] = item_info
 
-        logger.info('| Finish parsing page - 角色关联语音 - sub elements...')
+        logger.info('| Finish parsing page - 角色关联语音 - element...')
 
         return res_info
 
@@ -1393,25 +1299,20 @@ class CharacterParser(AbstractParser):
             set_height_scale=4.0,
         )
 
-        res_info['element_img_path'] = img_path
-        res_info['element_html_path'] = html_path
-
-        logger.info('| Finish parsing page - 角色宣发时间轴 - element...')
-
-        logger.info('| Start parsing page - 角色宣发时间轴 - sub elements...')
-
-        res_info['element_data']: List[Dict[str, Any]] = []
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()
 
         selector = Selector(text=content)
 
+        item_info: Dict[str, Any] = dict()
+
         timeline_items = selector.xpath('.//div[@class="timeline-content"]')
         for timeline_item in timeline_items:
-            item: Dict[str, Any] = dict()
-
-            item['时间'] = timeline_item.xpath('.//h3//text()').get().strip()
-            item['标题'] = timeline_item.xpath('.//h4//text()').get().strip()
+            time = timeline_item.xpath('.//h3//text()').get().strip()
+            title = timeline_item.xpath('.//h4//text()').get().strip()
             # custom-image-view
-            item['image_url'] = (
+            image_url = (
                 timeline_item.xpath(
                     './/span[@class="custom-image-view"]/@data-image-url'
                 )
@@ -1419,14 +1320,72 @@ class CharacterParser(AbstractParser):
                 .strip()
             )
 
-            item['content'] = ''.join(
+            content = ''.join(
                 timeline_item.xpath('.//p').xpath('string(.)').getall()
             ).strip()
-            item['link'] = timeline_item.xpath('.//a/@href').get().strip()
+            url = timeline_item.xpath('.//a/@href').get().strip()
 
-            res_info['element_data'].append(item)
+            item_info[time] = {
+                'time': time,
+                'title': title,
+                'image_url': image_url,
+                'content': content,
+                'url': url,
+            }
 
-        logger.info('| Finish parsing page - 角色宣发时间轴 - sub elements...')
+        res_info['data']['角色宣发时间轴'] = item_info
+
+        logger.info('| Finish parsing page - 角色宣发时间轴 - element...')
+
+        return res_info
+
+    async def _parse_media_info(
+        self, context_page: Page, browser_context: BrowserContext
+    ) -> Dict[str, Any]:
+        res_info: Dict[str, Any] = dict()
+
+        save_name = f'{self.save_id:04d}_角色媒体资料'
+        self.save_id += 1
+
+        logger.info('| Start parsing page - 角色媒体资料 - element...')
+
+        element = context_page.locator(
+            'div.wiki-consumer-module-strategy.obc-tmpl-part.obc-tmpl-strategy'
+        ).last
+
+        content, img_path, html_path = await save_element_overleaf(
+            page=context_page,
+            element=element,
+            save_name=save_name,
+            img_path=self.img_path,
+            html_path=self.html_path,
+            set_width_scale=self.config.set_width_scale,
+            set_height_scale=self.config.set_height_scale,
+        )
+
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()
+
+        selector = Selector(text=content)
+
+        item_info: Dict[str, Any] = dict()
+
+        cards = selector.xpath('.//div[@class="obc-tmpl-strategy__card"]')
+
+        for card in cards:
+            url = add_url(card.xpath('./a/@href').get().strip())
+            image_url = card.xpath('.//source/@srcset').get().strip()
+            title = (
+                card.xpath('.//div[@class="obc-tmpl-strategy__card--text"]//text()')
+                .get()
+                .strip()
+            )
+
+            item_info[title] = {'url': url, 'image_url': image_url, 'title': title}
+        res_info['data']['角色媒体资料'] = item_info
+
+        logger.info('| Finish parsing page - 角色媒体资料 - element...')
 
         return res_info
 
@@ -1462,14 +1421,9 @@ class CharacterParser(AbstractParser):
             set_height_scale=3.0,
         )
 
-        res_info['element_img_path'] = img_path
-        res_info['element_html_path'] = html_path
-
-        logger.info('| Finish parsing page - 关联词条 - element...')
-
-        logger.info('| Start parsing page - 关联词条 - sub elements...')
-
-        res_info['element_data']: List[Dict[str, Any]] = []
+        res_info['img_path'] = img_path
+        res_info['html_path'] = html_path
+        res_info['data']: Dict[str, Any] = dict()
 
         selector = Selector(text=content)
 
@@ -1491,15 +1445,15 @@ class CharacterParser(AbstractParser):
         if group:
             groups.append(group)
 
-        for group in groups:
-            item: Dict[str, Any] = dict()
+        item_info: Dict[str, Any] = dict()
 
+        for group in groups:
             ul = group[0]
             ps = group[1:]
 
-            item['name'] = ul.xpath('.//p').xpath('string(.)').get().strip()
+            name = ul.xpath('.//p').xpath('string(.)').get().strip()
 
-            item['associated_terms'] = []
+            associated_terms = []
             for p in ps:
                 associated_term = p.xpath('.//span[@class="custom-entry-wrapper"]')
                 if associated_term:
@@ -1507,7 +1461,7 @@ class CharacterParser(AbstractParser):
                     name = associated_term.xpath('./@data-entry-name').get()
                     icon_url = associated_term.xpath('./@data-entry-img').get()
 
-                    item['associated_terms'].append(
+                    associated_terms.append(
                         {
                             'url': url,
                             'name': name,
@@ -1515,11 +1469,13 @@ class CharacterParser(AbstractParser):
                         }
                     )
                 else:
-                    item['associated_terms'].append(p.xpath('string(.)').get().strip())
+                    associated_terms.append(p.xpath('string(.)').get().strip())
 
-            res_info['element_data'].append(item)
+            item_info[name] = {'name': name, 'associated_terms': associated_terms}
 
-        logger.info('| Finish parsing page - 关联词条 - sub elements...')
+            res_info['data']['关联词条'] = item_info
+
+        logger.info('| Finish parsing page - 关联词条 - element...')
 
         return res_info
 
@@ -1535,128 +1491,71 @@ class CharacterParser(AbstractParser):
 
         res_info: Dict[str, Any] = dict()
 
-        base_info = await self._parse_base_info(context_page, browser_context)
-        res_info.update(
-            {
-                '基础信息': base_info,
-            }
-        )
-
-        role_ascension_info = await self._parse_role_ascension_info(
+        res_info['基础信息'] = await self._parse_base_info(
             context_page, browser_context
         )
-        res_info.update(
-            {
-                '角色突破': role_ascension_info,
-            }
-        )
 
-        recommend_equipment_info = await self._parse_recommend_equipment_info(
+        res_info['角色突破'] = await self._parse_role_ascension_info(
             context_page, browser_context
         )
-        res_info.update(
-            {
-                '推荐装备': recommend_equipment_info,
-            }
-        )
 
-        recommend_strategy_info = await self._pase_recommend_strategy_info(
+        res_info['推荐装备'] = await self._parse_recommend_equipment_info(
             context_page, browser_context
         )
-        res_info.update(
-            {
-                '推荐攻略': recommend_strategy_info,
-            }
-        )
 
-        talent_info = await self._parse_talent_info(context_page, browser_context)
-        res_info.update(
-            {
-                '天赋': talent_info,
-            }
-        )
-
-        constellation_info = await self._parse_constellation_info(
+        res_info['推荐攻略'] = await self._pase_recommend_strategy_info(
             context_page, browser_context
         )
-        res_info.update(
-            {
-                '命之座': constellation_info,
-            }
+
+        res_info['天赋'] = await self._parse_talent_info(context_page, browser_context)
+
+        res_info['命之座'] = await self._parse_constellation_info(
+            context_page, browser_context
         )
 
         character_display_info = await self._parse_character_display_info(
             context_page, browser_context
         )
-        res_info.update(
-            {
-                '角色展示1': character_display_info['角色展示1'],
-                '角色展示2': character_display_info['角色展示2'],
-                '角色展示3': character_display_info['角色展示3'],
-            }
-        )
+        res_info['角色展示1'] = character_display_info['角色展示1']
+        res_info['角色展示2'] = character_display_info['角色展示2']
+        res_info['角色展示3'] = character_display_info['角色展示3']
 
-        bussiness_card_info = await self._parse_bussiness_card_info(
+        res_info['名片'] = await self._parse_bussiness_card_info(
             context_page, browser_context
         )
-        res_info.update(
-            {
-                '名片': bussiness_card_info,
-            }
-        )
 
-        speciality_cuisine_info = await self._parse_speciality_cuisine(
+        res_info['特殊料理'] = await self._parse_speciality_cuisine(
             context_page, browser_context
         )
-        res_info.update(
-            {
-                '特殊料理': speciality_cuisine_info,
-            }
-        )
 
-        character_cv_info = await self._parse_character_cv_info(
+        res_info['角色CV'] = await self._parse_character_cv_info(
             context_page, browser_context
         )
-        res_info.update(
-            {
-                '角色CV': character_cv_info,
-            }
-        )
+
+        # Extend information
         character_extend_info = await self._parse_character_extend_info(
             context_page, browser_context
         )
         res_info.update(character_extend_info)
 
-        voice_info = await self._parse_voice_info(context_page, browser_context)
-        res_info.update(
-            {
-                '配音展示': voice_info,
-            }
-        )
-
-        character_correlation_voice_info = await self._parse_correlation_voice_info(
+        res_info['配音展示'] = await self._parse_voice_info(
             context_page, browser_context
         )
-        res_info.update(
-            {
-                '角色关联语音': character_correlation_voice_info,
-            }
-        )
 
-        timeline_info = await self._parse_timeline_info(context_page, browser_context)
-        res_info.update(
-            {
-                '角色宣发时间轴': timeline_info,
-            }
-        )
-
-        associated_terms_info = await self._parse_associated_terms_info(
+        res_info['角色关联语音'] = await self._parse_correlation_voice_info(
             context_page, browser_context
         )
-        res_info.update(
-            {
-                '关联词条': associated_terms_info,
-            }
+
+        res_info['角色宣发时间轴'] = await self._parse_timeline_info(
+            context_page, browser_context
+        )
+
+        res_info['角色媒体资料'] = await self._parse_media_info(
+            context_page, browser_context
+        )
+
+        res_info['关联词条'] = await self._parse_associated_terms_info(
+            context_page, browser_context
         )
 
         return res_info
