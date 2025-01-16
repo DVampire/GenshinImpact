@@ -21,8 +21,8 @@ class FoodParser(AbstractParser):
         url: str,
         img_path: str,
         html_path: str,
-        id: str = 'enemy',
-        name: str = 'enemy',
+        id: str = 'food',
+        name: str = 'food',
         **kwargs,
     ) -> None:
         # Initialize the parent class
