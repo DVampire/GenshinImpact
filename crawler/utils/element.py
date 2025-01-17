@@ -1,6 +1,29 @@
 import os
+from typing import List
+
+from playwright.async_api import Locator
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from crawler.utils.html_files import save_html_file
+
+
+async def element_exists(locator: Locator | List[Locator]) -> bool:
+    try:
+        if isinstance(locator, list):
+            if len(locator) == 0:
+                return False
+            else:
+                return True
+        elif isinstance(locator, Locator):
+            count = await locator.count()
+            if count > 0:
+                return True
+            else:
+                return False
+        else:
+            return False
+    except PlaywrightTimeoutError:
+        return False
 
 
 async def save_element_overleaf(

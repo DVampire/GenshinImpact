@@ -5,7 +5,7 @@ from playwright.async_api import BrowserContext, BrowserType, async_playwright
 
 from crawler.base import AbstractCrawler, IpInfoModel
 from crawler.logger import logger
-from crawler.parser.illustration import IllustrationParser
+from crawler.parser.card import CardParser
 from crawler.proxy import create_ip_pool
 from crawler.utils.file_utils import assemble_project_path
 
@@ -147,15 +147,28 @@ class Crawler(AbstractCrawler):
         # summon_res_info = await summon_parser.parse(self.browser_context)
         # logger.info(f'Summon: {summon_res_info}')
 
-        # illustration (首页 图鉴)
-        url = 'https://bbs.mihoyo.com/ys/obc/channel/map/189/25?bbs_presentation_style=no_header&visit_device=pc'
-        illustration_parser = IllustrationParser(
+        # # illustration (首页 图鉴)
+        # url = 'https://bbs.mihoyo.com/ys/obc/channel/map/189/25?bbs_presentation_style=no_header&visit_device=pc'
+        # illustration_parser = IllustrationParser(
+        #     config=self.config,
+        #     url=url,
+        #     id='illustration',
+        #     name='illustration',
+        #     img_path=self.config.img_path,
+        #     html_path=self.config.html_path,
+        # )
+        # illustration_res_info = await illustration_parser.parse(self.browser_context)
+        # logger.info(f'Illustration: {illustration_res_info}')
+
+        # 卡牌图鉴 (卡牌图鉴)
+        url = 'https://bbs.mihoyo.com/ys/obc/channel/map/231/233?bbs_presentation_style=no_header&visit_device=pc'
+        card_parser = CardParser(
             config=self.config,
             url=url,
-            id='illustration',
-            name='illustration',
+            id='card',
+            name='card',
             img_path=self.config.img_path,
             html_path=self.config.html_path,
         )
-        illustration_res_info = await illustration_parser.parse(self.browser_context)
-        logger.info(f'Illustration: {illustration_res_info}')
+        card_res_info = await card_parser.parse(self.browser_context)
+        logger.info(f'Card: {card_res_info}')
