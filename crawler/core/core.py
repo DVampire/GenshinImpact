@@ -5,7 +5,7 @@ from playwright.async_api import BrowserContext, BrowserType, async_playwright
 
 from crawler.base import AbstractCrawler, IpInfoModel
 from crawler.logger import logger
-from crawler.parser.card import CardParser
+from crawler.parser.observation import ObservationParser
 from crawler.proxy import create_ip_pool
 from crawler.utils.file_utils import assemble_project_path
 
@@ -160,15 +160,41 @@ class Crawler(AbstractCrawler):
         # illustration_res_info = await illustration_parser.parse(self.browser_context)
         # logger.info(f'Illustration: {illustration_res_info}')
 
-        # 卡牌图鉴 (卡牌图鉴)
-        url = 'https://bbs.mihoyo.com/ys/obc/channel/map/231/233?bbs_presentation_style=no_header&visit_device=pc'
-        card_parser = CardParser(
+        # # 卡牌图鉴 (卡牌图鉴)
+        # url = 'https://bbs.mihoyo.com/ys/obc/channel/map/231/233?bbs_presentation_style=no_header&visit_device=pc'
+        # card_parser = CardParser(
+        #     config=self.config,
+        #     url=url,
+        #     id='card',
+        #     name='card',
+        #     img_path=self.config.img_path,
+        #     html_path=self.config.html_path,
+        # )
+        # card_res_info = await card_parser.parse(self.browser_context)
+        # logger.info(f'Card: {card_res_info}')
+
+        # # 观测 影音回廊
+        # url = 'https://bbs.mihoyo.com/ys/obc/channel/map/80/212?bbs_presentation_style=no_header&visit_device=pc'
+        # video_gallery_parser = VideoGalleryParser(
+        #     config=self.config,
+        #     url=url,
+        #     id='video_gallery',
+        #     name='video_gallery',
+        #     img_path=self.config.img_path,
+        #     html_path=self.config.html_path,
+        # )
+        # video_gallery_res_info = await video_gallery_parser.parse(self.browser_context)
+        # logger.info(f'VideoGallery: {video_gallery_res_info}')
+
+        # 观测
+        url = 'https://bbs.mihoyo.com/ys/obc/channel/map/190/7?bbs_presentation_style=no_header&visit_device=pc'
+        observation_parser = ObservationParser(
             config=self.config,
             url=url,
-            id='card',
-            name='card',
+            id='observation',
+            name='observation',
             img_path=self.config.img_path,
             html_path=self.config.html_path,
         )
-        card_res_info = await card_parser.parse(self.browser_context)
-        logger.info(f'Card: {card_res_info}')
+        observation_res_info = await observation_parser.parse(self.browser_context)
+        logger.info(f'Observation: {observation_res_info}')
