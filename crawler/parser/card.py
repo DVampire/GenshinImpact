@@ -336,9 +336,13 @@ class CardParser(AbstractParser):
 
         res_info: Dict[str, Any] = dict()
 
-        # res_info['角色牌'] = await self._parse_character_card(context_page, browser_context)
+        res_info['角色牌'] = await self._parse_character_card(
+            context_page, browser_context
+        )
 
-        # res_info['行动牌'] = await self._parse_action_card(context_page, browser_context)
+        res_info['行动牌'] = await self._parse_action_card(
+            context_page, browser_context
+        )
 
         res_info['魔物牌'] = await self._parse_monster_card(
             context_page, browser_context

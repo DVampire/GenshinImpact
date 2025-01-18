@@ -233,7 +233,7 @@ class ObservationParser(AbstractParser):
 
         res_info: Dict[str, Any] = dict()
 
-        # res_info['区域'] = await self._parse_region(context_page, browser_context)
+        res_info['区域'] = await self._parse_region(context_page, browser_context)
 
         res_info['考据'] = await self._parse_methodology(context_page, browser_context)
 

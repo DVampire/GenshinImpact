@@ -1880,46 +1880,48 @@ class IllustrationParser(AbstractParser):
 
         res_info: Dict[str, Any] = dict()
 
-        # res_info['角色'] = await self._parse_character(context_page, browser_context)
-        #
-        # res_info['武器'] = await self._parse_weapon(context_page, browser_context)
-        #
-        # res_info['圣遗物'] = await self._parse_artifact(context_page, browser_context)
-        #
-        # res_info['成就'] = await self._parse_achievement(context_page, browser_context)
-        #
-        # res_info['敌人'] = await self._parse_enemy(context_page, browser_context)
-        #
-        # res_info['地图文本'] = await self._parse_map_text(context_page, browser_context)
-        #
-        # res_info['食物'] = await self._parse_food(context_page, browser_context)
+        res_info['角色'] = await self._parse_character(context_page, browser_context)
 
-        # res_info['头像'] = await self._parse_avatar(context_page, browser_context)
+        res_info['武器'] = await self._parse_weapon(context_page, browser_context)
 
-        # res_info['背包'] = await self._parse_backpack(context_page, browser_context)
+        res_info['圣遗物'] = await self._parse_artifact(context_page, browser_context)
+
+        res_info['成就'] = await self._parse_achievement(context_page, browser_context)
+
+        res_info['敌人'] = await self._parse_enemy(context_page, browser_context)
+
+        res_info['地图文本'] = await self._parse_map_text(context_page, browser_context)
+
+        res_info['食物'] = await self._parse_food(context_page, browser_context)
+
+        res_info['头像'] = await self._parse_avatar(context_page, browser_context)
+
+        res_info['背包'] = await self._parse_backpack(context_page, browser_context)
 
         # TODO: 各个组件和元素未统一，暂时不详细解析，只解析了基础信息
-        # res_info['活动'] = await self._parse_activity(context_page, browser_context)
+        res_info['活动'] = await self._parse_activity(context_page, browser_context)
 
-        # res_info['任务'] = await self._parse_task(context_page, browser_context)
+        res_info['任务'] = await self._parse_task(context_page, browser_context)
 
-        # res_info['动物'] = await self._parse_animal(context_page, browser_context)
+        res_info['动物'] = await self._parse_animal(context_page, browser_context)
 
-        # res_info['书籍'] = await self._parse_book(context_page, browser_context)
+        res_info['书籍'] = await self._parse_book(context_page, browser_context)
 
-        # res_info['冒险家协会'] = await self._parse_adventurer_guild(context_page, browser_context)
+        res_info['冒险家协会'] = await self._parse_adventurer_guild(
+            context_page, browser_context
+        )
 
-        # res_info['NPC&商店'] = await self._parse_npc(context_page, browser_context)
+        res_info['NPC&商店'] = await self._parse_npc(context_page, browser_context)
 
-        # res_info['秘境'] = await self._parse_domain(context_page, browser_context)
+        res_info['秘境'] = await self._parse_domain(context_page, browser_context)
 
-        # res_info['洞天'] = await self._parse_fairyland(context_page, browser_context)
+        res_info['洞天'] = await self._parse_fairyland(context_page, browser_context)
 
-        # res_info['深境螺旋'] = await self._parse_abyss(context_page, browser_context)
+        res_info['深境螺旋'] = await self._parse_abyss(context_page, browser_context)
 
-        # res_info['名片'] = await self._parse_card(context_page, browser_context)
+        res_info['名片'] = await self._parse_card(context_page, browser_context)
 
-        # res_info['装扮'] = await self._parse_dress(context_page, browser_context)
+        res_info['装扮'] = await self._parse_dress(context_page, browser_context)
 
         res_info['教程'] = await self._parse_tutorial(context_page, browser_context)
 
