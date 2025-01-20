@@ -24,6 +24,7 @@ class DomainParser(AbstractParser):
         html_path: str,
         id: str = 'domain',
         name: str = 'domain',
+        icon: Optional[str] = None,
         **kwargs,
     ) -> None:
         # Initialize the parent class
@@ -32,6 +33,7 @@ class DomainParser(AbstractParser):
             url=url,
             id=id,
             name=name,
+            icon=icon,
             img_path=img_path,
             html_path=html_path,
         )

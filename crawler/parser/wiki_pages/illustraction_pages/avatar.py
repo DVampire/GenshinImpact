@@ -22,6 +22,7 @@ class AvatarParser(AbstractParser):
         html_path: str,
         id: str = 'avatar',
         name: str = 'avatar',
+        icon: Optional[str] = None,
         **kwargs,
     ) -> None:
         # Initialize the parent class
@@ -30,6 +31,7 @@ class AvatarParser(AbstractParser):
             url=url,
             id=id,
             name=name,
+            icon=icon,
             img_path=img_path,
             html_path=html_path,
         )

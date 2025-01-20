@@ -22,6 +22,7 @@ class ActivityParser(AbstractParser):
         html_path: str,
         id: str = 'activity',
         name: str = 'activity',
+        icon: Optional[str] = None,
         **kwargs,
     ) -> None:
         # Initialize the parent class
@@ -30,6 +31,7 @@ class ActivityParser(AbstractParser):
             url=url,
             id=id,
             name=name,
+            icon=icon,
             img_path=img_path,
             html_path=html_path,
         )

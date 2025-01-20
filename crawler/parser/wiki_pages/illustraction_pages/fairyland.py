@@ -23,6 +23,7 @@ class FairylandParser(AbstractParser):
         html_path: str,
         id: str = 'fairyland',
         name: str = 'fairyland',
+        icon: Optional[str] = None,
         **kwargs,
     ) -> None:
         # Initialize the parent class
@@ -31,6 +32,7 @@ class FairylandParser(AbstractParser):
             url=url,
             id=id,
             name=name,
+            icon=icon,
             img_path=img_path,
             html_path=html_path,
         )

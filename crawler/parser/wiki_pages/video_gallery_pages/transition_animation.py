@@ -22,6 +22,7 @@ class TransitionAnimationParser(AbstractParser):
         html_path: str,
         id: str = 'transition_animation',
         name: str = 'transition_animation',
+        icon: Optional[str] = None,
         **kwargs,
     ) -> None:
         # Initialize the parent class
@@ -30,6 +31,7 @@ class TransitionAnimationParser(AbstractParser):
             url=url,
             id=id,
             name=name,
+            icon=icon,
             img_path=img_path,
             html_path=html_path,
         )

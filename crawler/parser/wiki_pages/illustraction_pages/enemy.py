@@ -23,6 +23,7 @@ class EnemyParser(AbstractParser):
         html_path: str,
         id: str = 'enemy',
         name: str = 'enemy',
+        icon: Optional[str] = None,
         **kwargs,
     ) -> None:
         # Initialize the parent class
@@ -31,6 +32,7 @@ class EnemyParser(AbstractParser):
             url=url,
             id=id,
             name=name,
+            icon=icon,
             img_path=img_path,
             html_path=html_path,
         )

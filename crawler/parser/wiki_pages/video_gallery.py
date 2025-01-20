@@ -29,6 +29,7 @@ class VideoGalleryParser(AbstractParser):
         html_path: str,
         id: str = 'video_gallery',
         name: str = 'video_gallery',
+        icon: Optional[str] = None,
         **kwargs,
     ) -> None:
         # Initialize the parent class
@@ -37,6 +38,7 @@ class VideoGalleryParser(AbstractParser):
             url=url,
             id=id,
             name=name,
+            icon=icon,
             img_path=img_path,
             html_path=html_path,
         )

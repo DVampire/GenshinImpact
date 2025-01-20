@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from playwright.async_api import BrowserContext, BrowserType, async_playwright
 
@@ -7,7 +7,6 @@ from crawler.base import AbstractCrawler, IpInfoModel
 from crawler.logger import logger
 from crawler.parser.strategy import StrategyParser
 from crawler.parser.summon import SummonParser
-from crawler.parser.wiki import WikiParser
 from crawler.parser.wiki_pages.card import CardParser
 from crawler.parser.wiki_pages.illustration import IllustrationParser
 from crawler.parser.wiki_pages.observation import ObservationParser
@@ -116,48 +115,24 @@ class Crawler(AbstractCrawler):
             browser_context = await browser.new_context(user_agent=user_agent)
             return browser_context
 
-    async def search(self):
-        # wiki (观测 Wiki)
-        url = 'https://bbs.mihoyo.com/ys/obc/?bbs_presentation_style=no_header&visit_device=pc'
-        wiki_parser = WikiParser(
-            config=self.config,
-            url=url,
-            id='wiki',
-            name='wiki',
-            img_path=self.config.img_path,
-            html_path=self.config.html_path,
-        )
-        wiki_res_info = await wiki_parser.parse(self.browser_context)
-        logger.info(f'Wiki: {wiki_res_info}')
+    async def _parse_wiki(self):
+        res_info: Dict[str, Any] = {}
 
-        # strategy (观测 攻略)
-        url = 'https://bbs.mihoyo.com/ys/strategy/?bbs_presentation_style=no_header'
-        strategy_parser = StrategyParser(
-            config=self.config,
-            url=url,
-            id='strategy',
-            name='strategy',
-            img_path=self.config.img_path,
-            html_path=self.config.html_path,
-        )
-        strategy_res_info = await strategy_parser.parse(self.browser_context)
-        logger.info(f'Strategy: {strategy_res_info}')
+        # # wiki (观测 Wiki)
+        # url = 'https://bbs.mihoyo.com/ys/obc/?bbs_presentation_style=no_header&visit_device=pc'
+        # wiki_parser = WikiParser(
+        #     config=self.config,
+        #     url=url,
+        #     id='wiki',
+        #     name='wiki',
+        #     img_path=self.config.img_path,
+        #     html_path=self.config.html_path,
+        # )
+        # wiki_res_info = await wiki_parser.parse(self.browser_context)
+        # logger.info(f'Wiki: {wiki_res_info}')
+        # res_info.update(wiki_res_info)
 
-        # summon (观测 七圣召唤)
-        url = (
-            'https://bbs.mihoyo.com/ys/strategy/summon?bbs_presentation_style=no_header'
-        )
-        summon_parser = SummonParser(
-            config=self.config,
-            url=url,
-            id='summon',
-            name='summon',
-            img_path=self.config.img_path,
-            html_path=self.config.html_path,
-        )
-        summon_res_info = await summon_parser.parse(self.browser_context)
-        logger.info(f'Summon: {summon_res_info}')
-
+        # wiki pages
         # illustration (首页 图鉴)
         url = 'https://bbs.mihoyo.com/ys/obc/channel/map/189/25?bbs_presentation_style=no_header&visit_device=pc'
         illustration_parser = IllustrationParser(
@@ -165,6 +140,7 @@ class Crawler(AbstractCrawler):
             url=url,
             id='illustration',
             name='illustration',
+            icon=None,
             img_path=self.config.img_path,
             html_path=self.config.html_path,
         )
@@ -178,6 +154,7 @@ class Crawler(AbstractCrawler):
             url=url,
             id='card',
             name='card',
+            icon=None,
             img_path=self.config.img_path,
             html_path=self.config.html_path,
         )
@@ -191,6 +168,7 @@ class Crawler(AbstractCrawler):
             url=url,
             id='video_gallery',
             name='video_gallery',
+            icon=None,
             img_path=self.config.img_path,
             html_path=self.config.html_path,
         )
@@ -204,8 +182,71 @@ class Crawler(AbstractCrawler):
             url=url,
             id='observation',
             name='observation',
+            icon=None,
             img_path=self.config.img_path,
             html_path=self.config.html_path,
         )
         observation_res_info = await observation_parser.parse(self.browser_context)
         logger.info(f'Observation: {observation_res_info}')
+
+        res_info.update(illustration_res_info)
+        res_info.update(card_res_info)
+        res_info.update(video_gallery_res_info)
+        res_info.update(observation_res_info)
+
+        return res_info
+
+    async def _parse_strategy(self):
+        res_info: Dict[str, Any] = {}
+
+        # strategy (观测 攻略)
+        url = 'https://bbs.mihoyo.com/ys/strategy/?bbs_presentation_style=no_header'
+        strategy_parser = StrategyParser(
+            config=self.config,
+            url=url,
+            id='strategy',
+            name='strategy',
+            icon=None,
+            img_path=self.config.img_path,
+            html_path=self.config.html_path,
+        )
+        strategy_res_info = await strategy_parser.parse(self.browser_context)
+        logger.info(f'Strategy: {strategy_res_info}')
+
+        res_info.update(strategy_res_info)
+
+        return res_info
+
+    async def _parse_summon(self):
+        res_info: Dict[str, Any] = {}
+
+        # summon (观测 七圣召唤)
+        url = (
+            'https://bbs.mihoyo.com/ys/strategy/summon?bbs_presentation_style=no_header'
+        )
+        summon_parser = SummonParser(
+            config=self.config,
+            url=url,
+            id='summon',
+            name='summon',
+            icon=None,
+            img_path=self.config.img_path,
+            html_path=self.config.html_path,
+        )
+        summon_res_info = await summon_parser.parse(self.browser_context)
+        logger.info(f'Summon: {summon_res_info}')
+
+        res_info.update(summon_res_info)
+
+        return res_info
+
+    async def search(self):
+        # wiki
+        wiki_res_info = await self._parse_wiki()
+        logger.info(f'Wiki: {wiki_res_info}')
+
+        # # strategy
+        # strategy_res_info = await self._parse_strategy()
+        #
+        # # summon
+        # summon_res_info = await self._parse_summon()

@@ -172,3 +172,4 @@ cython_debug/
 
 datasets/
 workdir/
+es_server/

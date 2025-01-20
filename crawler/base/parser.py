@@ -21,12 +21,14 @@ class AbstractParser(ABC):
         name: str,
         img_path: str,
         html_path: str,
+        icon: Optional[str] = None,
         **kwargs,
     ) -> None:
         self.config = config
         self.url = url
         self.id = id
         self.name = name
+        self.icon = icon
 
         self.img_path = img_path
         self.html_path = html_path
@@ -91,6 +93,7 @@ class AbstractParser(ABC):
         res_info['url'] = self.url
         res_info['id'] = self.id
         res_info['name'] = self.name
+        res_info['icon'] = self.icon
         res_info['img_path'] = img_path
         res_info['html_path'] = html_path
 

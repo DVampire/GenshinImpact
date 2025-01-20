@@ -29,6 +29,7 @@ class CardParser(AbstractParser):
         html_path: str,
         id: str = 'card',
         name: str = 'card',
+        icon: Optional[str] = None,
         **kwargs,
     ) -> None:
         # Initialize the parent class
@@ -37,6 +38,7 @@ class CardParser(AbstractParser):
             url=url,
             id=id,
             name=name,
+            icon=icon,
             img_path=img_path,
             html_path=html_path,
         )

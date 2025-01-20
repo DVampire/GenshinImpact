@@ -24,6 +24,7 @@ class StrategyParser(AbstractParser):
         html_path: str,
         id: str = 'strategy',
         name: str = 'strategy',
+        icon: Optional[str] = None,
         **kwargs,
     ) -> None:
         # Initialize the parent class
@@ -32,6 +33,7 @@ class StrategyParser(AbstractParser):
             url=url,
             id=id,
             name=name,
+            icon=icon,
             img_path=img_path,
             html_path=html_path,
         )
