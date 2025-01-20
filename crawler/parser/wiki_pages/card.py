@@ -7,7 +7,7 @@ from scrapy.selector import Selector
 
 from crawler.base import AbstractParser
 from crawler.logger import logger
-from crawler.parser.card_pages import (
+from crawler.parser.wiki_pages.card_pages import (
     ActionCardParser,
     CharacterCardParser,
     MonsterCardParser,

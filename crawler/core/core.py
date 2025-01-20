@@ -5,7 +5,13 @@ from playwright.async_api import BrowserContext, BrowserType, async_playwright
 
 from crawler.base import AbstractCrawler, IpInfoModel
 from crawler.logger import logger
-from crawler.parser.observation import ObservationParser
+from crawler.parser.strategy import StrategyParser
+from crawler.parser.summon import SummonParser
+from crawler.parser.wiki import WikiParser
+from crawler.parser.wiki_pages.card import CardParser
+from crawler.parser.wiki_pages.illustration import IllustrationParser
+from crawler.parser.wiki_pages.observation import ObservationParser
+from crawler.parser.wiki_pages.video_gallery import VideoGalleryParser
 from crawler.proxy import create_ip_pool
 from crawler.utils.file_utils import assemble_project_path
 
@@ -112,79 +118,84 @@ class Crawler(AbstractCrawler):
 
     async def search(self):
         # wiki (观测 Wiki)
-        # url = 'https://bbs.mihoyo.com/ys/obc/?bbs_presentation_style=no_header&visit_device=pc'
-        # wiki_parser = WikiParser(config=self.config,
-        #                          url=url,
-        #                          id='wiki',
-        #                          name='wiki',
-        #                          img_path=self.config.img_path,
-        #                          html_path=self.config.html_path,
-        #                          )
-        # wiki_res_info = await wiki_parser.parse(self.browser_context)
-        # logger.info(f'Wiki: {wiki_res_info}')
-        #
-        # # strategy (观测 攻略)
-        # url = 'https://bbs.mihoyo.com/ys/strategy/?bbs_presentation_style=no_header'
-        # strategy_parser = StrategyParser(config=self.config,
-        #                                  url=url,
-        #                                  id='strategy',
-        #                                  name='strategy',
-        #                                  img_path=self.config.img_path,
-        #                                  html_path=self.config.html_path,
-        #                                  )
-        # strategy_res_info = await strategy_parser.parse(self.browser_context)
-        # logger.info(f'Strategy: {strategy_res_info}')
-        #
-        # # summon (观测 七圣召唤)
-        # url = 'https://bbs.mihoyo.com/ys/strategy/summon?bbs_presentation_style=no_header'
-        # summon_parser = SummonParser(config=self.config,
-        #                              url=url,
-        #                              id='summon',
-        #                              name='summon',
-        #                              img_path=self.config.img_path,
-        #                              html_path=self.config.html_path,
-        #                              )
-        # summon_res_info = await summon_parser.parse(self.browser_context)
-        # logger.info(f'Summon: {summon_res_info}')
+        url = 'https://bbs.mihoyo.com/ys/obc/?bbs_presentation_style=no_header&visit_device=pc'
+        wiki_parser = WikiParser(
+            config=self.config,
+            url=url,
+            id='wiki',
+            name='wiki',
+            img_path=self.config.img_path,
+            html_path=self.config.html_path,
+        )
+        wiki_res_info = await wiki_parser.parse(self.browser_context)
+        logger.info(f'Wiki: {wiki_res_info}')
 
-        # # illustration (首页 图鉴)
-        # url = 'https://bbs.mihoyo.com/ys/obc/channel/map/189/25?bbs_presentation_style=no_header&visit_device=pc'
-        # illustration_parser = IllustrationParser(
-        #     config=self.config,
-        #     url=url,
-        #     id='illustration',
-        #     name='illustration',
-        #     img_path=self.config.img_path,
-        #     html_path=self.config.html_path,
-        # )
-        # illustration_res_info = await illustration_parser.parse(self.browser_context)
-        # logger.info(f'Illustration: {illustration_res_info}')
+        # strategy (观测 攻略)
+        url = 'https://bbs.mihoyo.com/ys/strategy/?bbs_presentation_style=no_header'
+        strategy_parser = StrategyParser(
+            config=self.config,
+            url=url,
+            id='strategy',
+            name='strategy',
+            img_path=self.config.img_path,
+            html_path=self.config.html_path,
+        )
+        strategy_res_info = await strategy_parser.parse(self.browser_context)
+        logger.info(f'Strategy: {strategy_res_info}')
 
-        # # 卡牌图鉴 (卡牌图鉴)
-        # url = 'https://bbs.mihoyo.com/ys/obc/channel/map/231/233?bbs_presentation_style=no_header&visit_device=pc'
-        # card_parser = CardParser(
-        #     config=self.config,
-        #     url=url,
-        #     id='card',
-        #     name='card',
-        #     img_path=self.config.img_path,
-        #     html_path=self.config.html_path,
-        # )
-        # card_res_info = await card_parser.parse(self.browser_context)
-        # logger.info(f'Card: {card_res_info}')
+        # summon (观测 七圣召唤)
+        url = (
+            'https://bbs.mihoyo.com/ys/strategy/summon?bbs_presentation_style=no_header'
+        )
+        summon_parser = SummonParser(
+            config=self.config,
+            url=url,
+            id='summon',
+            name='summon',
+            img_path=self.config.img_path,
+            html_path=self.config.html_path,
+        )
+        summon_res_info = await summon_parser.parse(self.browser_context)
+        logger.info(f'Summon: {summon_res_info}')
 
-        # # 观测 影音回廊
-        # url = 'https://bbs.mihoyo.com/ys/obc/channel/map/80/212?bbs_presentation_style=no_header&visit_device=pc'
-        # video_gallery_parser = VideoGalleryParser(
-        #     config=self.config,
-        #     url=url,
-        #     id='video_gallery',
-        #     name='video_gallery',
-        #     img_path=self.config.img_path,
-        #     html_path=self.config.html_path,
-        # )
-        # video_gallery_res_info = await video_gallery_parser.parse(self.browser_context)
-        # logger.info(f'VideoGallery: {video_gallery_res_info}')
+        # illustration (首页 图鉴)
+        url = 'https://bbs.mihoyo.com/ys/obc/channel/map/189/25?bbs_presentation_style=no_header&visit_device=pc'
+        illustration_parser = IllustrationParser(
+            config=self.config,
+            url=url,
+            id='illustration',
+            name='illustration',
+            img_path=self.config.img_path,
+            html_path=self.config.html_path,
+        )
+        illustration_res_info = await illustration_parser.parse(self.browser_context)
+        logger.info(f'Illustration: {illustration_res_info}')
+
+        # 卡牌图鉴 (卡牌图鉴)
+        url = 'https://bbs.mihoyo.com/ys/obc/channel/map/231/233?bbs_presentation_style=no_header&visit_device=pc'
+        card_parser = CardParser(
+            config=self.config,
+            url=url,
+            id='card',
+            name='card',
+            img_path=self.config.img_path,
+            html_path=self.config.html_path,
+        )
+        card_res_info = await card_parser.parse(self.browser_context)
+        logger.info(f'Card: {card_res_info}')
+
+        # 观测 影音回廊
+        url = 'https://bbs.mihoyo.com/ys/obc/channel/map/80/212?bbs_presentation_style=no_header&visit_device=pc'
+        video_gallery_parser = VideoGalleryParser(
+            config=self.config,
+            url=url,
+            id='video_gallery',
+            name='video_gallery',
+            img_path=self.config.img_path,
+            html_path=self.config.html_path,
+        )
+        video_gallery_res_info = await video_gallery_parser.parse(self.browser_context)
+        logger.info(f'VideoGallery: {video_gallery_res_info}')
 
         # 观测
         url = 'https://bbs.mihoyo.com/ys/obc/channel/map/190/7?bbs_presentation_style=no_header&visit_device=pc'

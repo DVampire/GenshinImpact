@@ -7,7 +7,7 @@ from scrapy.selector import Selector
 
 from crawler.base import AbstractParser
 from crawler.logger import logger
-from crawler.parser.illustraction_pages import (
+from crawler.parser.wiki_pages.illustraction_pages import (
     AbyssParser,
     AchievementParser,
     ActivityParser,

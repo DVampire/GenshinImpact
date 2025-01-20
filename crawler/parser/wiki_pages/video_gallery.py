@@ -7,7 +7,7 @@ from scrapy.selector import Selector
 
 from crawler.base import AbstractParser
 from crawler.logger import logger
-from crawler.parser.video_gallery_pages import (
+from crawler.parser.wiki_pages.video_gallery_pages import (
     CharacterVideoParser,
     OtherVideoParser,
     TransitionAnimationParser,

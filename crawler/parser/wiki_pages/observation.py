@@ -7,7 +7,7 @@ from scrapy.selector import Selector
 
 from crawler.base import AbstractParser
 from crawler.logger import logger
-from crawler.parser.observation_pages import (
+from crawler.parser.wiki_pages.observation_pages import (
     MethodologyParser,
     RegionParser,
 )
